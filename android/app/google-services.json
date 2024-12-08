@@ -1,54 +1,62 @@
 {
-    "project_info": {
-      "project_number": "331782302853",
-      "project_id": "netscope-ffd10",
-      "storage_bucket": "netscope-ffd10.firebasestorage.app"
-    },
-    "client": [
-      {
-        "client_info": {
-          "mobilesdk_app_id": "1:331782302853:android:bf7649cdc11ad7aaaacdec",
-          "android_client_info": {
-            "package_name": "com.example.netscope"
+  "project_info": {
+    "project_number": "331782302853",
+    "project_id": "netscope-ffd10",
+    "storage_bucket": "netscope-ffd10.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:331782302853:android:bf7649cdc11ad7aaaacdec",
+        "android_client_info": {
+          "package_name": "com.example.netscope"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "331782302853-h567cq5985s7cepdpm8m2shbgkonbckn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.netscope",
+            "certificate_hash": "add49295d940ee0080d7abd4d0a189607efba4c2"
           }
         },
-        "oauth_client": [
-          {
-            "client_id": "331782302853-h567cq5985s7cepdpm8m2shbgkonbckn.apps.googleusercontent.com",
-            "client_type": 1,
-            "android_info": {
-              "package_name": "com.example.netscope",
-              "certificate_hash": "add49295d940ee0080d7abd4d0a189607efba4c2"
-            }
-          },
-          {
-            "client_id": "331782302853-tbo9oqdqot6n37es13hd6mjh8m3qvjeu.apps.googleusercontent.com",
-            "client_type": 3
+        {
+          "client_id": "331782302853-hed42h3abuj0q27r1d6i1os3ffrud3km.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.netscope",
+            "certificate_hash": "f4fc5130f40583d7f53d089c3fd7c9f945daed13"
           }
-        ],
-        "api_key": [
-          {
-            "current_key": "AIzaSyALHm1679yNX0Cduvb_aZQQXwXXUtMt4JE"
-          }
-        ],
-        "services": {
-          "appinvite_service": {
-            "other_platform_oauth_client": [
-              {
-                "client_id": "331782302853-tbo9oqdqot6n37es13hd6mjh8m3qvjeu.apps.googleusercontent.com",
-                "client_type": 3
-              },
-              {
-                "client_id": "331782302853-729ufs7b5qda4mtoe4r6vhpj4lu1ddfe.apps.googleusercontent.com",
-                "client_type": 2,
-                "ios_info": {
-                  "bundle_id": "com.example.client"
-                }
+        },
+        {
+          "client_id": "331782302853-tbo9oqdqot6n37es13hd6mjh8m3qvjeu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALHm1679yNX0Cduvb_aZQQXwXXUtMt4JE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "331782302853-tbo9oqdqot6n37es13hd6mjh8m3qvjeu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "331782302853-729ufs7b5qda4mtoe4r6vhpj4lu1ddfe.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.client"
               }
-            ]
-          }
+            }
+          ]
         }
       }
-    ],
-    "configuration_version": "1"
-  }
+    }
+  ],
+  "configuration_version": "1"
+}
