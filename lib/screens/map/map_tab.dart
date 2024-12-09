@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart'; // Add this line for localization
 
 class MapTab extends StatefulWidget {
   final Function(bool isInteracting) onMapInteraction;
+  final Function() onStartTraceRoute;
+  final bool isFetching;
+  final List<Map<String, dynamic>> hops;
 
   const MapTab({
     super.key,
     required this.onMapInteraction,
+    required this.onStartTraceRoute,
+    required this.isFetching,
+    required this.hops,
   });
 
   @override
@@ -18,6 +25,7 @@ class _MapTabState extends State<MapTab> {
   late GoogleMapController _mapController;
   bool _isInteracting = false;
   final TextEditingController _ipController = TextEditingController();
+  final Set<Marker> _markers = {};
 
   // Channel to communicate with native code
   static const platform = MethodChannel('com.example.traceroute/traceroute');
@@ -30,13 +38,45 @@ class _MapTabState extends State<MapTab> {
   String _tracerouteOutput = ''; // Store traceroute result
 
   @override
+  void didUpdateWidget(MapTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.hops != oldWidget.hops) {
+      _updateMarkers();
+    }
+  }
+
+  void _updateMarkers() {
+    if (!mounted) return; // Check if the widget is still mounted
+    setState(() {
+      _markers.clear();
+      for (var hop in widget.hops) {
+        if (hop['geolocation']['lat'] != null &&
+            hop['geolocation']['lon'] != null) {
+          _markers.add(
+            Marker(
+              markerId: MarkerId(hop['address']),
+              position:
+                  LatLng(hop['geolocation']['lat'], hop['geolocation']['lon']),
+              infoWindow: InfoWindow(
+                title: 'Hop ${hop['hopNumber']}',
+                snippet:
+                    '${hop['geolocation']['city']}, ${hop['geolocation']['country']}',
+              ),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Map with Traceroute')),
       body: Stack(
         children: [
           GoogleMap(
             initialCameraPosition: _initialPosition,
+            markers: _markers,
             onMapCreated: (GoogleMapController controller) {
               _mapController = controller;
             },
@@ -62,46 +102,19 @@ class _MapTabState extends State<MapTab> {
             rotateGesturesEnabled: true,
           ),
           Positioned(
-            bottom: 100, // Adjusted to make space for input field and button
+            bottom: 16,
             left: 16,
-            right: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: TextField(
-                    controller: _ipController,
-                    decoration: InputDecoration(
-                      labelText: 'Enter IP/Domain',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType:
-                        TextInputType.text, // Ensure proper keyboard type
-                  ),
-                ),
-                SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _getTraceroute,
-                  child: const Text('Start Traceroute'),
-                ),
-              ],
+            child: FloatingActionButton(
+              onPressed: widget.onStartTraceRoute,
+              child: const Icon(Icons.play_arrow),
+              tooltip: Intl.message('Start Trace Route'), // Localize this line
             ),
           ),
-          // Optionally show traceroute output
-          if (_tracerouteOutput.isNotEmpty)
+          if (widget.isFetching)
             Positioned(
-              bottom: 150,
+              bottom: 80,
               left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.black.withOpacity(0.7),
-                child: Text(
-                  _tracerouteOutput,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
+              child: CircularProgressIndicator(),
             ),
         ],
       ),
@@ -121,10 +134,12 @@ class _MapTabState extends State<MapTab> {
     try {
       final String result =
           await platform.invokeMethod('getTraceroute', {'ip': ip});
+      if (!mounted) return; // Check if the widget is still mounted
       setState(() {
         _tracerouteOutput = result;
       });
     } on PlatformException catch (e) {
+      if (!mounted) return; // Check if the widget is still mounted
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to get traceroute: ${e.message}")),
       );

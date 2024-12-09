@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Add this line for localization
 import 'login_screen.dart';
 import 'map_screen.dart';
 
@@ -9,12 +10,12 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("NetScope"),
+        title: Text(Intl.message("NetScope")), // Localize this line
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: "Logout",
+            tooltip: Intl.message("Logout"), // Localize this line
             onPressed: () {
               // Navigate to the login screen
               Navigator.pushReplacement(
@@ -29,11 +30,11 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // 3 columns
+            crossAxisCount: 2, // 2 columns for better spacing
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-          itemCount: 9, // 9 tiles as shown in the image
+          itemCount: 6, // Reduced to 6 tiles for simplicity
           itemBuilder: (context, index) {
             // Define the content for the tiles
             final isMapTile = index == 0;
@@ -57,27 +58,32 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.category,
+                    Icon(
+                      isMapTile
+                          ? Icons.map
+                          : isSpeedtestTile
+                              ? Icons.speed
+                              : Icons.category,
                       size: 40,
-                      color: Colors.grey,
+                      color: Colors.blue,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       isMapTile
-                          ? "Map"
+                          ? Intl.message("Map") // Localize this line
                           : isSpeedtestTile
-                              ? "Speedtest"
-                              : "Blank",
+                              ? Intl.message("Speedtest") // Localize this line
+                              : Intl.message("Blank"), // Localize this line
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       isMapTile
-                          ? "Updated today"
+                          ? Intl.message("Updated today") // Localize this line
                           : isSpeedtestTile
-                              ? "Upcoming..."
-                              : "Blank",
+                              ? Intl.message(
+                                  "Upcoming...") // Localize this line
+                              : Intl.message("Blank"), // Localize this line
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
@@ -90,26 +96,26 @@ class HomeScreen extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: 2, // Set Homepage as the active tab
-        items: const [
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: "Profile",
+            label: Intl.message("Profile"), // Localize this line
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
-            label: "Favorites",
+            label: Intl.message("Favorites"), // Localize this line
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: "Homepage",
+            label: Intl.message("Homepage"), // Localize this line
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
-            label: "Contribute",
+            label: Intl.message("Contribute"), // Localize this line
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications),
-            label: "Updates",
+            label: Intl.message("Updates"), // Localize this line
           ),
         ],
       ),

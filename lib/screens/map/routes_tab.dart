@@ -1,44 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Add this line for localization
 
-class RoutesTab extends StatelessWidget {
-  final List<Map<String, dynamic>> routes;
-  final Function(int index, Map<String, dynamic> newRoute) onRouteUpdate;
+class HopsTab extends StatelessWidget {
+  final List<Map<String, dynamic>> hops;
+  final Function(int index, Map<String, dynamic> newHop) onHopUpdate;
 
-  const RoutesTab({
+  const HopsTab({
     super.key,
-    required this.routes,
-    required this.onRouteUpdate,
+    required this.hops,
+    required this.onHopUpdate,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: routes.length,
-      itemBuilder: (context, index) {
-        final route = routes[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: Text(
-              route['flag'] ?? '🚩',
-              style: const TextStyle(fontSize: 32),
-            ),
-            title: Text(route['hop'] ?? 'Hop Name'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return hops.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("IP Address: ${route['ip'] ?? 'Unknown'}"),
-                Text("Host: ${route['host'] ?? 'Unknown'}"),
-                Text("Location: ${route['location'] ?? 'Unknown'}"),
+                CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  Intl.message('Waiting for data...'), // Localize this line
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
               ],
             ),
-            trailing: Text(
-              route['time'] ?? '0ms',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      },
-    );
+          )
+        : ListView.builder(
+            itemCount: hops.length,
+            itemBuilder: (context, index) {
+              final hop = hops[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  leading: Text(
+                    hop['flag'] ?? '🚩',
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                  title: Text('Hop ${hop['hopNumber']}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("IP Address: ${hop['address']}"),
+                      Text("Response Time: ${hop['responseTime']} ms"),
+                    ],
+                  ),
+                  trailing: const Icon(Icons.arrow_forward),
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/routeDetails',
+                      arguments: hop,
+                    );
+                  },
+                ),
+              );
+            },
+          );
   }
 }
