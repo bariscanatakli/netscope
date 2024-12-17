@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
-import 'home_screen.dart';
+import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -78,8 +78,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDarkMode ? Colors.black : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final buttonColor = isDarkMode ? Colors.grey[800] : Colors.blue;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
@@ -91,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Logo (Optional)
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: Colors.white,
+                  backgroundColor: backgroundColor,
                   child: Image.asset(
                     'assets/logo2.png',
                     height: 100,
@@ -105,17 +110,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.email, color: Colors.white),
+                    prefixIcon: Icon(Icons.email, color: textColor),
                     hintText: "Enter your email",
                     filled: true,
-                    fillColor: const Color(0xFF3A4F56),
+                    fillColor: buttonColor!.withOpacity(0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
-                    hintStyle: const TextStyle(color: Colors.white),
+                    hintStyle: TextStyle(color: textColor),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                 ),
                 const SizedBox(height: 20),
                 // Password Field
@@ -123,24 +128,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.lock, color: Colors.white),
+                    prefixIcon: Icon(Icons.lock, color: textColor),
                     hintText: "Enter your password",
                     filled: true,
-                    fillColor: const Color(0xFF3A4F56),
+                    fillColor: buttonColor.withOpacity(0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
-                    hintStyle: const TextStyle(color: Colors.white),
+                    hintStyle: TextStyle(color: textColor),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                 ),
                 const SizedBox(height: 20),
                 // Login Button
                 ElevatedButton(
                   onPressed: login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3A4F56),
+                    backgroundColor: buttonColor,
                     padding: const EdgeInsets.symmetric(
                       vertical: 15,
                       horizontal: 50,
@@ -149,9 +154,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     "Login",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: textColor),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -159,16 +164,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 OutlinedButton.icon(
                   onPressed: googleLogin,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.black),
+                    side: BorderSide(color: textColor),
                     padding: const EdgeInsets.symmetric(
                       vertical: 15,
                       horizontal: 10,
                     ),
                   ),
-                  icon: const Icon(Icons.login, color: Colors.black),
-                  label: const Text(
+                  icon: Icon(Icons.login, color: textColor),
+                  label: Text(
                     "Sign in with Google",
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: textColor),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -181,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           builder: (context) => const SignupScreen()),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     "Don't have an account? Sign Up",
                     style: TextStyle(
                       color: Colors.red,
@@ -201,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           builder: (context) => const ForgotPasswordScreen()),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     "Forgot Password?",
                     style: TextStyle(
                       color: Colors.blue,

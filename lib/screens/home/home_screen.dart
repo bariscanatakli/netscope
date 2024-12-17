@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add this line for localization
-import 'login_screen.dart';
-import 'map_screen.dart';
+import 'package:provider/provider.dart';
+import '../../theme/theme_notifier.dart'; // Add this line to import ThemeNotifier
+import '../auth/login_screen.dart';
+import '../map_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -22,6 +24,14 @@ class HomeScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
               );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.brightness_6),
+            tooltip: Intl.message("Toggle Theme"), // Localize this line
+            onPressed: () {
+              print('Toggle Theme button pressed'); // Debug print
+              Provider.of<ThemeNotifier>(context, listen: false).toggleTheme();
             },
           ),
         ],

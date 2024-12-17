@@ -1,0 +1,25 @@
+{
+    "common": {
+        "ok": "Tamam",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "delete": "Sil",
+        "edit": "Düzenle",
+        "add": "Ekle",
+        "search": "Ara",
+        "loading": "Yükleniyor",
+        "error": "Hata"
+    },
+    "navigation": {
+        "home": "Ana Sayfa",
+        "settings": "Ayarlar",
+        "profile": "Profil",
+        "logout": "Çıkış"
+    },
+    "messages": {
+        "confirmDelete": "Silmek istediğinizden emin misiniz?",
+        "saveSuccess": "Başarıyla kaydedildi",
+        "errorOccurred": "Bir hata oluştu",
+        "requiredField": "Bu alan zorunludur"
+    }
+}

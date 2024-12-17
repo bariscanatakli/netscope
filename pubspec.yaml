@@ -31,14 +31,13 @@ dev_dependencies:
   mockito: ^5.0.16 # Add this line for unit testing
   build_runner: ^2.1.7 # Add this line for code generation
   flutter_localizations:
-
     sdk: flutter
 
 flutter:
   uses-material-design: true
 
   assets:
+    - assets/translations/
     - assets/logo.png
     - assets/logo2.png
     - assets/map.jpg
-    - assets/translations/ # Add this line for localization files

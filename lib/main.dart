@@ -1,51 +1,54 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'; // Add this line for localization
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:logging/logging.dart';
-import 'package:netscope/screens/login_screen.dart';
-import 'package:netscope/screens/route_details_screen.dart'; // Add this line
+import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'theme/app_theme.dart';
+import 'theme/theme_notifier.dart'; // Add this line to import ThemeNotifier
+import 'screens/map/traceroute_model.dart'; // Add this line to import the TracerouteModel
 
 void main() async {
-  // Initialize logging configuration here
-  Logger.root.level = Level.ALL; // Set the logging level
-  Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.time}: ${record.message}');
-  });
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(NetScopeApp());
+  runApp(MyApp());
 }
 
-class NetScopeApp extends StatelessWidget {
-  const NetScopeApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'NetScope',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TracerouteModel()),
+        ChangeNotifierProvider(
+            create: (_) =>
+                ThemeNotifier()), // Add this line to provide ThemeNotifier
+      ],
+      child: Consumer<ThemeNotifier>(
+        builder: (context, themeNotifier, child) {
+          return MaterialApp(
+            title: 'NetScope',
+            theme: themeNotifier.currentTheme,
+            localizationsDelegates: [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: [
+              const Locale('en', ''), // English
+              const Locale('tr', ''), // Turkish
+            ],
+            home: LoginScreen(),
+            routes: {
+              '/home': (context) => HomeScreen(),
+              // Add other routes here
+            },
+          );
+        },
       ),
-      home: const LoginScreen(),
-      routes: {
-        '/routeDetails': (context) =>
-            const RouteDetailsScreen(), // Add this line
-      },
-      localizationsDelegates: [
-        // Add this block for localization
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: [
-        // Add this block for localization
-        const Locale('en', ''), // English
-        // Add other supported locales here
-      ],
     );
   }
 }

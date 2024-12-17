@@ -1,0 +1,31 @@
+{
+    "common": {
+        "ok": "OK",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "edit": "Edit",
+        "close": "Close"
+    },
+    "navigation": {
+        "home": "Home",
+        "dashboard": "Dashboard",
+        "settings": "Settings"
+    },
+    "messages": {
+        "welcome": "Welcome to NetScope",
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "success": "Operation successful"
+    },
+    "settings": {
+        "language": "Language",
+        "theme": "Theme",
+        "notifications": "Notifications"
+    },
+    "errors": {
+        "notFound": "Page not found",
+        "serverError": "Server error",
+        "connectionError": "Connection error"
+    }
+}

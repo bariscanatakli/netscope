@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:netscope/screens/home_screen.dart';
+import 'package:netscope/screens/home/home_screen.dart';
 import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -111,8 +111,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDarkMode ? Colors.black : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final buttonColor = isDarkMode ? Colors.grey[800] : Colors.blue;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
@@ -124,7 +129,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 // Logo
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.white,
+                  backgroundColor: backgroundColor,
                   child: Image.asset(
                     'assets/logo2.png',
                     height: 80,
@@ -138,16 +143,17 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.email, color: textColor),
                     hintText: "Enter your email",
                     filled: true,
-                    fillColor: const Color(0xFF3A4F56),
+                    fillColor: buttonColor!.withOpacity(0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
-                    hintStyle: const TextStyle(color: Colors.white),
+                    hintStyle: TextStyle(color: textColor),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                 ),
                 const SizedBox(height: 15),
                 // Password Field
@@ -155,16 +161,17 @@ class _SignupScreenState extends State<SignupScreen> {
                   controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.lock, color: textColor),
                     hintText: "Enter your password",
                     filled: true,
-                    fillColor: const Color(0xFF3A4F56),
+                    fillColor: buttonColor.withOpacity(0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
-                    hintStyle: const TextStyle(color: Colors.white),
+                    hintStyle: TextStyle(color: textColor),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                 ),
                 const SizedBox(height: 15),
                 // Confirm Password Field
@@ -172,32 +179,33 @@ class _SignupScreenState extends State<SignupScreen> {
                   controller: confirmPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.lock, color: textColor),
                     hintText: "Confirm your password",
                     filled: true,
-                    fillColor: const Color(0xFF3A4F56),
+                    fillColor: buttonColor.withOpacity(0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
-                    hintStyle: const TextStyle(color: Colors.white),
+                    hintStyle: TextStyle(color: textColor),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                 ),
                 const SizedBox(height: 20),
                 // Register Button
                 ElevatedButton(
                   onPressed: signup,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3A4F56),
+                    backgroundColor: buttonColor,
                     padding: const EdgeInsets.symmetric(
                         vertical: 12, horizontal: 40),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     "Register",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: textColor),
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -225,14 +233,14 @@ class _SignupScreenState extends State<SignupScreen> {
                 OutlinedButton.icon(
                   onPressed: googleLogin,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.black),
+                    side: BorderSide(color: textColor),
                     padding: const EdgeInsets.symmetric(
                         vertical: 12, horizontal: 10),
                   ),
-                  icon: const Icon(Icons.login, color: Colors.black),
-                  label: const Text(
+                  icon: Icon(Icons.login, color: textColor),
+                  label: Text(
                     "Sign in with Google",
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: textColor),
                   ),
                 ),
               ],
