@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeNotifier>(
         builder: (context, themeNotifier, child) {
           return MaterialApp(
+            debugShowCheckedModeBanner: false,
             title: 'NetScope',
             theme: themeNotifier.currentTheme,
             localizationsDelegates: [
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
             ],
             home: LoginScreen(),
             routes: {
-              '/home': (context) => HomeScreen(),
+              '/home': (context) => RootScreen(),
               // Add other routes here
             },
           );

@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return; // Context'in geçerliliğini kontrol et
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const RootScreen()),
       );
     } catch (e) {
       if (mounted) {
@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return; // Context'in geçerliliğini kontrol et
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const RootScreen()),
       );
     } catch (e) {
       if (mounted) {

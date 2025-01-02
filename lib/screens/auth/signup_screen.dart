@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:netscope/screens/auth/username_screen.dart';
 import 'package:netscope/screens/home/home_screen.dart';
 import 'login_screen.dart';
 
@@ -15,7 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -42,9 +43,10 @@ class _SignupScreenState extends State<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Registration successful!")),
         );
+        // Instead of going to LoginScreen directly, go to UsernameScreen
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => const UsernameScreen()),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -57,6 +59,7 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     }
   }
+
 
   // Google Sign-In
   Future<void> googleLogin() async {
@@ -76,7 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // Get authentication details
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      await googleUser.authentication;
 
       // Firebase authentication
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -96,7 +99,7 @@ class _SignupScreenState extends State<SignupScreen> {
           context,
           MaterialPageRoute(
               builder: (context) =>
-                  const HomeScreen()), // Change to your homepage widget
+              const RootScreen()), // Change to your homepage widget
         );
       }
     } catch (e) {
