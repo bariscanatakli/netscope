@@ -4,82 +4,62 @@ import 'package:intl/intl.dart'; // Add this line for localization
 class DetailsTab extends StatelessWidget {
   final List<Map<String, dynamic>> tracerouteDetails;
 
-  const DetailsTab({
-    super.key,
-    required this.tracerouteDetails,
-  });
+  const DetailsTab({Key? key, required this.tracerouteDetails})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              Intl.message('Traceroute Details'), // Localize this line
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              Intl.message(
-                  'Traceroute is a network diagnostic tool used to track the pathway taken by a packet on an IP network from source to destination. It helps in identifying the route and measuring transit delays of packets across the network.'), // Localize this line
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            if (tracerouteDetails.isEmpty)
-              Center(
-                child: Column(
-                  children: [
-                    CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      Intl.message('Waiting for data...'), // Localize this line
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-              )
-            else ...[
-              Text(
-                '${Intl.message('Destination')}: ${tracerouteDetails.first['address']}', // Localize this line
-                style: Theme.of(context).textTheme.bodyLarge,
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView.builder(
+        itemCount: tracerouteDetails.length,
+        itemBuilder: (context, index) {
+          final hop = tracerouteDetails[index];
+          return Card(
+            margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: ExpansionTile(
+              title: Text(
+                'Hop ${hop['hopNumber']}',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 16),
-              Text(
-                Intl.message('Hops:'), // Localize this line
-                style: Theme.of(context).textTheme.headlineSmall,
+              subtitle: Text(
+                hop['address'] ?? 'Unknown',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 8),
-              ...tracerouteDetails.map((details) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hop ${details['hopNumber']}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                        Text('IP Address: ${details['address']}'),
-                        Text('Response Time: ${details['responseTime']} ms'),
-                        Text('Details: ${details['details']}'),
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow(
+                          'Response Time', '${hop['responseTime']}ms'),
+                      if (hop['geolocation'] != null) ...[
+                        _buildDetailRow('Location',
+                            hop['geolocation']['city'] ?? 'Unknown'),
+                        _buildDetailRow('Country',
+                            hop['geolocation']['country'] ?? 'Unknown'),
                       ],
-                    ),
+                    ],
                   ),
-                );
-              }).toList(),
-            ],
-          ],
-        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(value),
+        ],
       ),
     );
   }

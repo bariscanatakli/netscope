@@ -16,7 +16,7 @@ dependencies:
   google_sign_in: ^6.2.2
   cupertino_icons: ^1.0.8
   google_maps_flutter: ^2.2.5
-  xml: ^5.3.1
+  xml: ^6.5.0
   provider: ^6.1.2
   process_run: ^0.12.0
   logging: ^1.0.2
@@ -32,8 +32,9 @@ dependencies:
   firebase_app_check: ^0.3.1+6
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.3.1
-
-
+  flutter_riverpod: ^2.4.9
+  
+  freezed_annotation: ^2.4.1
 
 
 
@@ -43,15 +44,15 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   mockito: ^5.0.16 # Add this line for unit testing
-  build_runner: ^2.1.7 # Add this line for code generation
+  build_runner: ^2.4.8
+  freezed: ^2.4.6
   flutter_localizations:
     sdk: flutter
+  flutter_launcher_icons: ^0.11.0
 
 flutter:
   uses-material-design: true
-
   assets:
-    - assets/translations/
-    - assets/logo.png
-    - assets/logo2.png
-    - assets/map.jpg
+    - assets/logo2-removebg.png
+    - assets/Centered_Flutter_App_Icon_1024x1024.png
+    - assets/512-background.png

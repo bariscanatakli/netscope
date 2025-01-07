@@ -8,6 +8,9 @@ import 'theme/theme_notifier.dart';
 import 'providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'widgets/auth_state_wrapper.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
+import 'screens/home/root_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,11 +34,12 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'NetScope',
             theme: themeNotifier.currentTheme,
-            initialRoute: '/',
+            initialRoute: '/login',
             routes: {
-              '/': (context) => AuthStateWrapper(),
-              '/login': (context) => LoginScreen(),
-              '/root': (context) => RootScreen(),
+              '/login': (context) => const LoginScreen(),
+              '/signup': (context) => const SignupScreen(),
+              '/forgotPassword': (context) => const ForgotPasswordScreen(),
+              '/home': (context) => const RootScreen(),
             },
           );
         },

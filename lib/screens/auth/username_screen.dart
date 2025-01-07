@@ -1,107 +1,73 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UsernameScreen extends StatefulWidget {
-  const UsernameScreen({Key? key}) : super(key: key);
+  final String email;
+  final bool isGoogleSignIn;
+
+  const UsernameScreen({
+    Key? key,
+    required this.email, // Add this
+    this.isGoogleSignIn = false,
+  }) : super(key: key);
 
   @override
   State<UsernameScreen> createState() => _UsernameScreenState();
 }
 
 class _UsernameScreenState extends State<UsernameScreen> {
-  final TextEditingController _usernameController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _usernameController = TextEditingController();
+  bool _isLoading = false;
 
-  Future<void> _saveUsernameAndContinue() async {
-    User? user = _auth.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No user signed in.")),
-      );
-      return;
-    }
-
+  Future<void> _createUserDocument() async {
+    setState(() => _isLoading = true);
     try {
-      // Update the Firebase User displayName field
-      await user.updateDisplayName(_usernameController.text.trim());
-      await user.reload();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-      // Save the username to Firestore
-      final userDoc =
-          FirebaseFirestore.instance.collection('users').doc(user.uid);
-      await userDoc.set({
-        'email': user.email,
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'username': _usernameController.text.trim(),
+        'email': widget.email,
         'createdAt': Timestamp.now(),
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Username saved successfully!")),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save username: $e")),
+        SnackBar(content: Text(e.toString())),
       );
     }
+    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDarkMode ? Colors.black : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black;
-    final buttonColor = isDarkMode ? Colors.grey[800] : Colors.blue;
-
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person, color: textColor),
-                    hintText: "Choose a username",
-                    filled: true,
-                    fillColor: buttonColor!.withOpacity(0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    hintStyle: TextStyle(color: textColor),
-                  ),
-                  style: TextStyle(color: textColor),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _saveUsernameAndContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: buttonColor,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 40,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Choose a username',
+                      prefixIcon: Icon(Icons.person),
                     ),
                   ),
-                  child: Text(
-                    "Save Username",
-                    style: TextStyle(color: textColor),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _createUserDocument,
+                    child: const Text('Continue'),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

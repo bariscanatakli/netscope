@@ -79,13 +79,23 @@ class TraceRouteService {
     }; // Return default values on error
   }
 
-  @visibleForTesting
-  Future<String> getDeviceIpAddress() =>
-      _getDeviceIpAddress(); // Add this line for unit testing
+  Future<int> _pingIpAddress(String ipAddress) async {
+    final ping = Ping(ipAddress, count: 4);
+    final pingData = await ping.stream.toList();
+    final pingTimes = pingData
+        .where((event) => event.response != null)
+        .map((event) => event.response!.time?.inMilliseconds ?? -1)
+        .toList();
 
-  @visibleForTesting
-  Future<Map<String, dynamic>> getGeolocation(String ipAddress) =>
-      _getGeolocation(ipAddress); // Add this line for unit testing
+    if (pingTimes.isNotEmpty) {
+      final averagePing = pingTimes.reduce((a, b) => a + b) ~/ pingTimes.length;
+      _logger.info('Ping to $ipAddress: $averagePing ms');
+      return averagePing;
+    } else {
+      _logger.warning('Failed to ping $ipAddress');
+      return -1; // Indicate failure to ping
+    }
+  }
 
   Future<List<TracerouteResult>> trace() async {
     List<TracerouteResult> results = [];
@@ -110,13 +120,15 @@ class TraceRouteService {
         for (var hop in data['data']) {
           final ip = _extractIpAddress(hop['host']);
           final geolocation = await _getGeolocation(ip);
+          final pingTime = await _pingIpAddress(ip);
+          final responseTime = (hop['avg'] as num?)?.toDouble() ?? -1.0;
           results.add(TracerouteResult(
             hopNumber: hop['hop'],
             address: hop['host'] ?? '*',
-            responseTime: (hop['avg'] as num)
-                .toDouble(), // Ensure responseTime is a double
+            responseTime: pingTime != -1 ? pingTime.toDouble() : responseTime,
             isSuccess: true,
             geolocation: geolocation,
+            pingTime: pingTime,
           ));
         }
       } else {
@@ -135,31 +147,6 @@ class TraceRouteService {
     final match = RegExp(r'\((.*?)\)').firstMatch(host);
     return match != null ? match.group(1)! : host;
   }
-
-  TracerouteResult? _parseTracerouteLine(String line) {
-    // Implement parsing logic based on the traceroute output format
-    // Example line: " 1  192.168.1.1 (192.168.1.1)  2.123 ms"
-    final regex = RegExp(r'^\s*(\d+)\s+(.*?)\s+\((.*?)\)\s+(.*?ms)');
-    final match = regex.firstMatch(line);
-
-    if (match != null) {
-      int hopNumber = int.parse(match.group(1)!);
-      String address = match.group(3)!;
-      String responseTimeStr = match.group(4)!;
-      double responseTime = double.parse(responseTimeStr.replaceAll(' ms', ''));
-
-      return TracerouteResult(
-        hopNumber: hopNumber,
-        address: address,
-        responseTime: responseTime,
-        isSuccess: true,
-        geolocation: {}, // Placeholder for geolocation data
-      );
-    } else {
-      // Handle lines that don't match the expected format
-      return null;
-    }
-  }
 }
 
 class TracerouteResult {
@@ -167,20 +154,40 @@ class TracerouteResult {
   final String address;
   final double responseTime;
   final bool isSuccess;
-  final Map<String, dynamic> geolocation; // Add geolocation field
+  final Map<String, dynamic> geolocation;
+  final int pingTime;
 
   TracerouteResult({
     required this.hopNumber,
     required this.address,
     required this.responseTime,
     required this.isSuccess,
-    required this.geolocation, // Add geolocation field
+    required this.geolocation,
+    required this.pingTime,
   });
+
+  TracerouteResult copyWith({
+    int? hopNumber,
+    String? address,
+    double? responseTime,
+    bool? isSuccess,
+    Map<String, dynamic>? geolocation,
+    int? pingTime,
+  }) {
+    return TracerouteResult(
+      hopNumber: hopNumber ?? this.hopNumber,
+      address: address ?? this.address,
+      responseTime: responseTime ?? this.responseTime,
+      isSuccess: isSuccess ?? this.isSuccess,
+      geolocation: geolocation ?? this.geolocation,
+      pingTime: pingTime ?? this.pingTime,
+    );
+  }
 
   @override
   String toString() {
     return isSuccess
-        ? 'Hop $hopNumber: $address (${responseTime} ms) - Location: ${geolocation['city']}, ${geolocation['country']}'
+        ? 'Hop $hopNumber: $address (${responseTime} ms, Ping: ${pingTime} ms) - Location: ${geolocation['city']}, ${geolocation['country']}'
         : 'Hop $hopNumber: **** (No response)';
   }
 }
