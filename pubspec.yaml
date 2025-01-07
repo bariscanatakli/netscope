@@ -54,5 +54,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logo2-removebg.png
-    - assets/Centered_Flutter_App_Icon_1024x1024.png
     - assets/512-background.png
