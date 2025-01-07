@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add this line for localization
-import 'routes_tab.dart';
+
 import 'map_tab.dart';
 import 'details_tab.dart';
 import 'services/trace_route_service.dart';
@@ -123,7 +123,6 @@ class _MapScreenState extends State<MapScreen> {
                       final timestamp = data['timestamp'] as Timestamp;
                       final hopCount = (data['hops'] as List).length;
 
-                      // Update the ListView.builder itemBuilder:
                       return Card(
                         margin:
                             EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -190,6 +189,8 @@ class _MapScreenState extends State<MapScreen> {
     print('Traceroute button pressed');
     setState(() {
       _isLoading = true;
+      isHistoricalTrace =
+          false; // Ensure this is set to false when starting a new trace
     });
 
     try {
@@ -227,7 +228,6 @@ class _MapScreenState extends State<MapScreen> {
         _isLoading = false;
         _selectedIndex = 1;
         currentTraceTime = DateTime.now();
-        isHistoricalTrace = false;
         destinationAddress = destination; // Ensure destination is set
       });
 
@@ -255,68 +255,99 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  Future<void> _confirmDisruption() async {
+    final shouldDisrupt = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Disrupt Traceroute'),
+        content: Text('Do you want to disrupt the traceroute process?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDisrupt == true) {
+      // Handle disruption logic here
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_isLoading) {
+      await _confirmDisruption();
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).primaryColor,
-        elevation: 2,
-        centerTitle: true,
-        title: _isLoading
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _getLocalizedString("Trace Route"),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ],
-              )
-            : Text(
-                _getLocalizedString("Trace Route"),
-                style: const TextStyle(color: Colors.white),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Traceroute'),
+          centerTitle: true, // Center the title
+          actions: [
+            if (_isLoading)
+              IconButton(
+                icon: Icon(Icons.cancel),
+                onPressed: _confirmDisruption,
               ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: _showHistory,
-          ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          MapTab(
-            hops: hops,
-            onMapInteraction: (isInteracting) {},
-            onStartTraceRoute: _traceRoute,
-            isFetching: _isLoading,
-          ),
-          HopsTab(hops: hops), // Use the HopsTab class
-          DetailsTab(tracerouteDetails: tracerouteDetails),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: _getLocalizedString('Map'), // Localize this line
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions),
-            label: _getLocalizedString('Hops'), // Localize this line
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.details),
-            label: _getLocalizedString('Details'), // Localize this line
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+            IconButton(
+              icon: Icon(Icons.history),
+              onPressed: _showHistory,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            if (_isLoading) LinearProgressIndicator(),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  MapTab(
+                    hops: hops,
+                    onMapInteraction: (isInteracting) {},
+                    onStartTraceRoute: _traceRoute,
+                    isFetching: _isLoading,
+                  ),
+                  HopsTab(hops: hops), // Use the HopsTab class
+                  DetailsTab(tracerouteDetails: tracerouteDetails),
+                ],
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map),
+              label: _getLocalizedString('Map'), // Localize this line
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.directions),
+              label: _getLocalizedString('Hops'), // Localize this line
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.details),
+              label: _getLocalizedString('Details'), // Localize this line
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }

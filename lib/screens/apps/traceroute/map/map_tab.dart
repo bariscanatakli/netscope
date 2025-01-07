@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart'; // Add this line for localization
+import 'package:intl/intl.dart';
+import 'package:netscope/screens/apps/traceroute/map/hop_details_screen.dart'; // Add this line for localization
 
 class MapTab extends StatefulWidget {
   final Function(bool isInteracting) onMapInteraction;
@@ -221,51 +222,7 @@ class _MapTabState extends State<MapTab> {
               ],
             ),
           ),
-          if (widget.isFetching)
-            Positioned(
-              bottom: 80,
-              left: 16,
-              child: CircularProgressIndicator(),
-            ),
         ],
-      ),
-    );
-  }
-}
-
-class HopDetailsScreen extends StatelessWidget {
-  final Map<String, dynamic> hop;
-
-  const HopDetailsScreen({Key? key, required this.hop}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Hop Details'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Hop Number: ${hop['hopNumber']}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('Address: ${hop['address']}', style: TextStyle(fontSize: 16)),
-            SizedBox(height: 8),
-            Text('Response Time: ${hop['responseTime']}ms',
-                style: TextStyle(fontSize: 16)),
-            SizedBox(height: 8),
-            if (hop['geolocation'] != null) ...[
-              Text('Location: ${hop['geolocation']['city'] ?? 'Unknown'}',
-                  style: TextStyle(fontSize: 16)),
-              SizedBox(height: 8),
-              Text('Country: ${hop['geolocation']['country'] ?? 'Unknown'}',
-                  style: TextStyle(fontSize: 16)),
-            ],
-          ],
-        ),
       ),
     );
   }
