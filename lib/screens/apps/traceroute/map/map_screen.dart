@@ -60,6 +60,132 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  Future<void> _showHistory() async {
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('traceroutes')
+        .doc(user!.uid)
+        .collection('results')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Traceroute History',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: snapshot.docs.length,
+                    itemBuilder: (context, index) {
+                      final data = snapshot.docs[index].data();
+                      final timestamp = data['timestamp'] as Timestamp;
+                      final hopCount = (data['hops'] as List).length;
+
+                      // Update the ListView.builder itemBuilder:
+                      return Card(
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            child: Text('${index + 1}'),
+                          ),
+                          title: Text('AWS EC2 Instance (172.18.0.1)'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat.yMMMd()
+                                    .add_jm()
+                                    .format(timestamp.toDate()),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              Text(
+                                'Hops: $hopCount',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.map),
+                            onPressed: () {
+                              setState(() {
+                                hops = List<Map<String, dynamic>>.from(
+                                    data['hops']);
+                                tracerouteDetails = hops;
+                                currentTraceTime = timestamp.toDate();
+                                isHistoricalTrace = true;
+                                _selectedIndex = 0; // Switch to map tab
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                          onTap: () {
+                            setState(() {
+                              hops =
+                                  List<Map<String, dynamic>>.from(data['hops']);
+                              tracerouteDetails = hops;
+                              currentTraceTime = timestamp.toDate();
+                              isHistoricalTrace = true;
+                              _selectedIndex = 1; // Switch to hops tab
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _traceRoute() async {
     print('Traceroute button pressed');
     setState(() {
@@ -154,6 +280,12 @@ class _MapScreenState extends State<MapScreen> {
                 _getLocalizedString("Trace Route"),
                 style: const TextStyle(color: Colors.white),
               ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: _showHistory,
+          ),
+        ],
       ),
       body: IndexedStack(
         index: _selectedIndex,
