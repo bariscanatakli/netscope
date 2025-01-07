@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Add this line for localization
-import 'map/routes_tab.dart';
-import 'map/map_tab.dart';
-import 'map/details_tab.dart';
-import 'map/service/trace_route_service.dart';
+import 'routes_tab.dart';
+import 'map_tab.dart';
+import 'details_tab.dart';
+import 'service/trace_route_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -25,7 +25,7 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  void _traceRoute() async {
+  Future<void> _traceRoute() async {
     print('Traceroute button pressed');
     setState(() {
       _isLoading = true;
@@ -56,7 +56,14 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _isLoading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error during traceroute: $e')),
+      );
     }
+  }
+
+  String _getLocalizedString(String key) {
+    return Intl.message(key);
   }
 
   @override
@@ -66,7 +73,7 @@ class _MapScreenState extends State<MapScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(Intl.message("Trace Route")), // Localize this line
+            Text(_getLocalizedString("Trace Route")), // Localize this line
             if (_isLoading)
               Padding(
                 padding: const EdgeInsets.only(left: 8.0),
@@ -100,15 +107,15 @@ class _MapScreenState extends State<MapScreen> {
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: Intl.message('Map'), // Localize this line
+            label: _getLocalizedString('Map'), // Localize this line
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.directions),
-            label: Intl.message('Hops'), // Localize this line
+            label: _getLocalizedString('Hops'), // Localize this line
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.details),
-            label: Intl.message('Details'), // Localize this line
+            label: _getLocalizedString('Details'), // Localize this line
           ),
         ],
         currentIndex: _selectedIndex,

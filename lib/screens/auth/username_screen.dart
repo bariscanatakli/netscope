@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; // Only needed if you use Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
@@ -15,7 +15,6 @@ class _UsernameScreenState extends State<UsernameScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _saveUsernameAndContinue() async {
-    // 1. Get the current user
     User? user = _auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -24,47 +23,31 @@ class _UsernameScreenState extends State<UsernameScreen> {
       return;
     }
 
-    // ------------ APPROACH A: Update Firebase User Profile --------------
     try {
       // Update the Firebase User displayName field
       await user.updateDisplayName(_usernameController.text.trim());
-      // Reload the user to apply changes
       await user.reload();
-      user = _auth.currentUser;
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to update displayName: $e")),
-      );
-      return;
-    }
 
-    // ------------ APPROACH B: Store username in Firestore (optional) -----------
-    // (Uncomment below if you also want to keep a record in the Firestore DB)
-    /*
-    try {
-      final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      // Save the username to Firestore
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
       await userDoc.set({
         'email': user.email,
         'username': _usernameController.text.trim(),
         'createdAt': Timestamp.now(),
       });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Firestore save error: $e")),
-      );
-      return;
-    }
-    */
 
-    // 2. Notify user & navigate to the next screen
-    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Username saved successfully!")),
       );
-      // For example, go to HomeScreen or LoginScreen
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to save username: $e")),
       );
     }
   }
