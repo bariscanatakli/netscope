@@ -53,6 +53,7 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void dispose() {
     _animationController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -125,7 +126,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (!mounted) return;
     try {
       final provider =
-          Provider.of<app_auth.AuthProvider>(context, listen: false);
+      Provider.of<app_auth.AuthProvider>(context, listen: false);
       final user = provider.user;
       if (user == null) {
         throw Exception('Please sign in to upload profile photos');
@@ -187,7 +188,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (!mounted) return;
     try {
       final provider =
-          Provider.of<app_auth.AuthProvider>(context, listen: false);
+      Provider.of<app_auth.AuthProvider>(context, listen: false);
       final user = provider.user;
       if (user == null) {
         throw Exception('Please sign in to update username');
@@ -197,9 +198,8 @@ class _ProfilePageState extends State<ProfilePage>
       await user.reload();
       await provider.refreshUser();
 
-      // Update the username in Firestore
       final userDoc =
-          FirebaseFirestore.instance.collection('users').doc(user.uid);
+      FirebaseFirestore.instance.collection('users').doc(user.uid);
       await userDoc.update({
         'username': _usernameController.text.trim(),
       });
@@ -217,6 +217,107 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
   }
+
+  Future<void> _changePassword() async {
+    final TextEditingController currentPasswordController =
+    TextEditingController();
+    final TextEditingController newPasswordController =
+    TextEditingController();
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Change Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Current Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Change'),
+              onPressed: () async {
+                final provider = Provider.of<app_auth.AuthProvider>(
+                    context,
+                    listen: false);
+                final user = provider.user;
+                if (user == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please sign in to change your password'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  if (user.providerData[0].providerId == 'google.com') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Cannot change password for Google sign-in'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    Navigator.of(context).pop();
+                    return;
+                  }
+
+                  // For email-password users
+                  final credential = EmailAuthProvider.credential(
+                    email: user.email!,
+                    password: currentPasswordController.text,
+                  );
+                  await user.reauthenticateWithCredential(credential);
+                  await user.updatePassword(newPasswordController.text);
+                  Navigator.of(context).pop();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error changing password: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   Widget _buildProfileImage() {
     return Stack(
@@ -341,6 +442,16 @@ class _ProfilePageState extends State<ProfilePage>
                         },
                       ),
                     ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.lock),
+                    label: const Text('Change Password'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: buttonColor,
+                      foregroundColor: textColor,
+                    ),
+                    onPressed: _changePassword,
+                  ),
                   const SizedBox(height: 32),
                   _buildSectionTitle(context, 'Network Information'),
                   _buildProfileCard(
