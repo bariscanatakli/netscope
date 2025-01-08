@@ -14,13 +14,9 @@ class ImprovedSpeedTest {
     distance: 0,
   );
 
-  // Remove the client as a class field
-  // late final http.Client _client;
-
   Future<SpeedTestResult> runTest(
     void Function(TestProgress) onProgress,
   ) async {
-    // Create a new client for each test
     final client = http.Client();
 
     try {
@@ -30,10 +26,8 @@ class ImprovedSpeedTest {
         currentSpeed: 0,
       ));
 
-      // Warm up connection
       await _warmUpConnection(client);
 
-      // Ping Test
       onProgress(TestProgress(
         status: 'Measuring latency...',
         progress: 0.1,
@@ -42,7 +36,6 @@ class ImprovedSpeedTest {
 
       final ping = await _optimizedPing(client);
 
-      // Download Test
       final downloadSpeed = await _testDownload(
         client,
         (progress, speed) {
@@ -54,7 +47,6 @@ class ImprovedSpeedTest {
         },
       );
 
-      // Upload Test
       final uploadSpeed = await _testUpload(
         client,
         (progress, speed) {
@@ -140,7 +132,7 @@ class ImprovedSpeedTest {
             'Cache-Control': 'no-cache',
             'pragma': 'no-cache',
           },
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(const Duration(seconds: 20)); // Increased timeout duration
 
         if (response.statusCode == 200) {
           final bytesReceived = response.bodyBytes.length;
@@ -169,14 +161,22 @@ class ImprovedSpeedTest {
     }
 
     speeds.sort();
-    final validSpeeds = speeds.sublist(
-      speeds.length ~/ 4,
-      (speeds.length * 3) ~/ 4,
-    );
+    print('All recorded speeds: $speeds');
 
-    final avgSpeed = validSpeeds.reduce((a, b) => a + b) / validSpeeds.length;
-    print('Average download speed: $avgSpeed Mbps');
-    return avgSpeed;
+    final validSpeeds = speeds.length >= 4
+        ? speeds.sublist(speeds.length ~/ 4, (speeds.length * 3) ~/ 4)
+        : speeds;
+
+    print('Valid speeds for averaging: $validSpeeds');
+
+    if (validSpeeds.isNotEmpty) {
+      final avgSpeed = validSpeeds.reduce((a, b) => a + b) / validSpeeds.length;
+      print('Average download speed: $avgSpeed Mbps');
+      return avgSpeed;
+    } else {
+      print('No valid download speeds recorded');
+      return 0;
+    }
   }
 
   Future<double> _testUpload(
