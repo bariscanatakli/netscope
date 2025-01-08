@@ -70,13 +70,6 @@ Ensure the `google-services.json` file is placed in `netscope/android/app`.
 
 - **Theme**: Change the theme (Light/Dark) by pressing the theme button at the top of the page.
 
-## Screenshots from the Application
-
-- Homepage
-- Favorites Page
-- Profile Page
-- Traceroute Feature
-- Speed Test Feature
 
 ## FAQ
 
