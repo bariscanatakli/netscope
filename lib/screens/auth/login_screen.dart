@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/logo_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -62,10 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  const SizedBox(height: 50), // Add space above the logo
-                  Image.asset('assets/logo2-removebg.png',
-                      height: 100), // Added logo
-                  const SizedBox(height: 50), // Add space below the logo
+                  LogoWidget(), // Add the logo widget here
                   TextField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -90,8 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: _isLoading ? null : _signInWithGoogle,
-                    icon: const Icon(Icons
-                        .login), // Changed from Image.asset('assets/google_logo.png')
+                    icon: const Icon(Icons.login),
                     label: const Text('Sign in with Google'),
                   ),
                   const SizedBox(height: 16),

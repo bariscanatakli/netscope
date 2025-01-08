@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../widgets/logo_widget.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -42,6 +43,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  LogoWidget(), // Add the logo widget here
                   const Text('Reset Password', style: TextStyle(fontSize: 18)),
                   const SizedBox(height: 24),
                   TextField(

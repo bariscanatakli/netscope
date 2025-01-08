@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'username_screen.dart';
+import '../../widgets/logo_widget.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -63,6 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  LogoWidget(), // Add the logo widget here
                   TextField(
                     controller: _emailController,
                     decoration: const InputDecoration(
