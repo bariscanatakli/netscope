@@ -126,7 +126,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (!mounted) return;
     try {
       final provider =
-      Provider.of<app_auth.AuthProvider>(context, listen: false);
+          Provider.of<app_auth.AuthProvider>(context, listen: false);
       final user = provider.user;
       if (user == null) {
         throw Exception('Please sign in to upload profile photos');
@@ -188,7 +188,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (!mounted) return;
     try {
       final provider =
-      Provider.of<app_auth.AuthProvider>(context, listen: false);
+          Provider.of<app_auth.AuthProvider>(context, listen: false);
       final user = provider.user;
       if (user == null) {
         throw Exception('Please sign in to update username');
@@ -199,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage>
       await provider.refreshUser();
 
       final userDoc =
-      FirebaseFirestore.instance.collection('users').doc(user.uid);
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
       await userDoc.update({
         'username': _usernameController.text.trim(),
       });
@@ -220,36 +220,48 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _changePassword() async {
     final TextEditingController currentPasswordController =
-    TextEditingController();
-    final TextEditingController newPasswordController =
-    TextEditingController();
+        TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
 
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Change Password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: currentPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Current Password',
-                  border: OutlineInputBorder(),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Current Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
                 ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: newPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
                 ),
-                obscureText: true,
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                ),
+              ],
+            ),
           ),
           actions: <Widget>[
             TextButton(
@@ -261,9 +273,8 @@ class _ProfilePageState extends State<ProfilePage>
             ElevatedButton(
               child: const Text('Change'),
               onPressed: () async {
-                final provider = Provider.of<app_auth.AuthProvider>(
-                    context,
-                    listen: false);
+                final provider =
+                    Provider.of<app_auth.AuthProvider>(context, listen: false);
                 final user = provider.user;
                 if (user == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -275,11 +286,23 @@ class _ProfilePageState extends State<ProfilePage>
                   return;
                 }
 
+                if (newPasswordController.text !=
+                    confirmPasswordController.text) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('New passwords do not match'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 try {
                   if (user.providerData[0].providerId == 'google.com') {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Cannot change password for Google sign-in'),
+                        content:
+                            Text('Cannot change password for Google sign-in'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -317,7 +340,6 @@ class _ProfilePageState extends State<ProfilePage>
       },
     );
   }
-
 
   Widget _buildProfileImage() {
     return Stack(
@@ -409,62 +431,65 @@ class _ProfilePageState extends State<ProfilePage>
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildProfileImage(),
-                  const SizedBox(height: 16),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle(context, 'Account Information'),
-                  _buildProfileCard(
-                    icon: Icons.email,
-                    title: 'Email',
-                    subtitle: user?.email ?? 'Not set',
-                  ),
-                  if (_isEditingUsername)
-                    _buildEditableProfileCard(
-                      icon: Icons.person,
-                      title: 'Username',
-                      controller: _usernameController,
-                      onSave: _updateUsername,
-                    )
-                  else
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 16),
+                    _buildProfileImage(),
+                    const SizedBox(height: 16),
+                    _buildSectionTitle(context, 'Account Information'),
                     _buildProfileCard(
-                      icon: Icons.person,
-                      title: 'Username',
-                      subtitle: _usernameController.text,
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () {
-                          setState(() {
-                            _isEditingUsername = true;
-                          });
-                        },
+                      icon: Icons.email,
+                      title: 'Email',
+                      subtitle: user?.email ?? 'Not set',
+                    ),
+                    if (_isEditingUsername)
+                      _buildEditableProfileCard(
+                        icon: Icons.person,
+                        title: 'Username',
+                        controller: _usernameController,
+                        onSave: _updateUsername,
+                      )
+                    else
+                      _buildProfileCard(
+                        icon: Icons.person,
+                        title: 'Username',
+                        subtitle: _usernameController.text,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            setState(() {
+                              _isEditingUsername = true;
+                            });
+                          },
+                        ),
                       ),
+                    const SizedBox(height: 16),
+                    if (user?.providerData[0].providerId != 'google.com')
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.lock),
+                        label: const Text('Change Password'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: buttonColor,
+                          foregroundColor: textColor,
+                        ),
+                        onPressed: _changePassword,
+                      ),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle(context, 'Network Information'),
+                    _buildProfileCard(
+                      icon: Icons.wifi,
+                      title: 'IP Address',
+                      subtitle: _networkInfo?['ip'] ?? 'Loading...',
                     ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.lock),
-                    label: const Text('Change Password'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: buttonColor,
-                      foregroundColor: textColor,
+                    _buildProfileCard(
+                      icon: Icons.network_check,
+                      title: 'Connection Type',
+                      subtitle: _networkInfo?['connectionType'] ?? 'Loading...',
                     ),
-                    onPressed: _changePassword,
-                  ),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle(context, 'Network Information'),
-                  _buildProfileCard(
-                    icon: Icons.wifi,
-                    title: 'IP Address',
-                    subtitle: _networkInfo?['ip'] ?? 'Loading...',
-                  ),
-                  _buildProfileCard(
-                    icon: Icons.network_check,
-                    title: 'Connection Type',
-                    subtitle: _networkInfo?['connectionType'] ?? 'Loading...',
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
