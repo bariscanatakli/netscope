@@ -1,82 +1,186 @@
-# NetScope Test Plan: Team Assignment
+NetScope Test Plan – Enhanced Team Assignment
 
-This document ensures that testing tasks are distributed equally among 4 team members, with clear responsibilities for each.
+## 📅 Test Completion Target
 
-## Team Member 1: Authentication & User Management
-**Files to test:**
-- lib/screens/auth/login_screen.dart
-- lib/screens/auth/signup_screen.dart
-- lib/screens/auth/forgot_password_screen.dart
-- lib/providers/auth_provider.dart
-- lib/widgets/auth_state_wrapper.dart
-
-**Scope:**
-- User registration flow
-- Login functionality
-- Password recovery
-- User profile data storage/retrieval
-- Authentication state persistence
-- Firebase authentication integration
-
-## Team Member 2: Speed Test & Results
-**Files to test:**
-- lib/screens/apps/speedtest/speedtest_screen.dart
-- lib/screens/apps/speedtest/speed_test_results_screen.dart
-- lib/screens/apps/speedtest/services/speedtest_service.dart
-- lib/screens/apps/pingtest/ (all files)
-
-**Scope:**
-- Download/upload speed measurement
-- Ping test functionality
-- Test results storage in Firestore
-- Display of historical speed test results
-- Network performance metrics accuracy
-- Speed test cancellation and error handling
-
-## Team Member 3: Traceroute & Map Features
-**Files to test:**
-- lib/screens/apps/traceroute/map/map_screen.dart
-- lib/screens/apps/traceroute/map/map_tab.dart
-- lib/screens/apps/traceroute/map/hops_tab.dart
-- lib/screens/apps/traceroute/map/details_tab.dart
-- lib/screens/apps/traceroute/map/hop_details_screen.dart
-
-**Scope:**
-- Traceroute execution and visualization
-- Google Maps integration
-- Hop navigation and display
-- Geolocation data mapping
-- Traceroute history storage/retrieval
-- Network topology visualization
-
-## Team Member 4: Core Features & Network Scanner
-**Files to test:**
-- lib/screens/home/home_page.dart
-- lib/screens/home/favorites_page.dart
-- lib/screens/home/profile_page.dart
-- lib/screens/home/root_screen.dart
-- lib/services/network_info_service.dart
-- lib/screens/apps/networkscanner/ (all files)
-
-**Scope:**
-- Navigation and routing between screens
-- Theme switching functionality
-- Favorites system (add/remove favorites)
-- User profile data display
-- Network information gathering
-- Network scanner tool functionality
-- Cross-platform behavior testing
-
-## Test Types for Each Area
-- Unit Tests
-- Widget Tests
-- Integration Tests
-- End-to-End Tests
-
-## Test Environment Setup
-- Common mock services are defined in test/setup.dart.
-- Use the command `flutter test` to run tests.
+**90% overall test coverage**
 
 ---
 
-Each team member should write tests for their assigned files using the provided test folder structure.
+## 👥 Team Member Responsibilities
+
+| 📦 Module                                  | 👤 Assignee         | 🎯 Target Coverage |
+| ------------------------------------------ | ------------------- | ------------------ |
+| **Authentication & User Management** | Mustafa Morsy       | 90%                |
+| **Speed Test & Results**             | Barış Can Ataklı | 95%                |
+| **Traceroute & Map Features**        | Bayram Gürbüz     | 85%                |
+| **Core Features & Network Scanner**  | Alaa Hosny Saber    | 90%                |
+
+---
+
+## 🧾 Module Details & Test Plans
+
+### 🔐 Mustafa Morsy – *Authentication & User Management*
+
+**Target Files:**
+
+- `login_screen.dart`
+- `signup_screen.dart`
+- `forgot_password_screen.dart`
+- `auth_provider.dart`
+- `auth_state_wrapper.dart`
+
+**Critical Test Scenarios:**
+
+- ✅ Successful login with valid credentials
+- ✅ Failed login with invalid credentials
+- ✅ User registration with email verification
+- ✅ Password recovery flow
+- ✅ Authentication persistence after app restarts
+- ✅ Secured route protection via auth state
+
+**Mock Strategy:**
+
+- Utilize `MockFirebaseAuth` from `firebase_mocks.dart`
+- Define test users with consistent, known credentials
+
+---
+
+### 🚀 Barış Can Ataklı – *Speed Test & Results*
+
+**Target Files:**
+
+- `speedtest_screen.dart`
+- `speed_test_results_screen.dart`
+- `speedtest_service.dart`
+- `lib/screens/apps/pingtest/` (all files)
+
+**Critical Test Scenarios:**
+
+- ✅ Accurate measurement of download/upload speeds
+- ✅ Reliable ping responsiveness & timeout detection
+- ✅ Result storage with correct Firestore metadata
+- ✅ Retrieval & display of historical test data
+- ✅ Handling of different network states (WiFi, Cellular, Offline)
+- ✅ Test cancellation functionality
+
+**Mock Strategy:**
+
+- Use `MockSpeedTestService` for stable test data
+- Use `MockNetworkInfo` to simulate various connection types
+
+---
+
+### 🗺️ Bayram Gürbüz – *Traceroute & Map Features*
+
+**Target Files:**
+
+- `map_screen.dart`
+- `map_tab.dart`
+- `hops_tab.dart`
+- `details_tab.dart`
+- `hop_details_screen.dart`
+
+**Critical Test Scenarios:**
+
+- ✅ Execution and analysis of traceroute
+- ✅ Google Map initialization with proper API keys
+- ✅ Marker display for each network hop
+- ✅ Path visualization from source to destination
+- ✅ Accurate rendering of hop details
+- ✅ Persistent storage of traceroute history
+
+**Mock Strategy:**
+
+- Implement `MockTracerouteService` for static hop data
+- Utilize fake `GoogleMap` widget for map-related tests
+
+---
+
+### 🧩 Alaa Hosny Saber – *Core Features & Network Scanner*
+
+**Target Files:**
+
+- `home_page.dart`
+- `favorites_page.dart`
+- `profile_page.dart`
+- `root_screen.dart`
+- `network_info_service.dart`
+- `lib/screens/apps/networkscanner/` (all files)
+
+**Critical Test Scenarios:**
+
+- ✅ Full app navigation flow & state transitions
+- ✅ Light/Dark mode switching
+- ✅ Persistent favorites management
+- ✅ Display & update of user profile info
+- ✅ Accurate network device scanning
+- ✅ Cross-platform UI and behavior consistency
+
+**Mock Strategy:**
+
+- Create `MockNetworkScanner` for expected results
+- Use `MockSharedPreferences` for theme & favorites persistence
+
+---
+
+## 🔝 Priority Testing Areas
+
+1. **🔐 Authentication Flow** – Ensures secure user access
+2. **📶 Speed Test Accuracy** – Core functional metric
+3. **🗺️ Map Integration** – External API dependency & UI complexity
+4. **🧭 App Navigation** – Impacts all user journeys
+
+---
+
+## ⚙️ Test Implementation Guidelines
+
+- **File Organization:**
+
+  - `test/unit/` – Unit tests
+  - `test/widget/` – Widget/component tests
+  - `test/integration/` – End-to-end/integration tests
+- **Naming Convention:**Use `feature_name_test.dart` for clarity
+- **Test Header Template:**
+
+  ```dart
+  /*
+    Test File: auth_provider_test.dart
+    Description: Tests for authentication logic and Firebase integration
+    Author: Mustafa Morsy
+    Dependencies: MockFirebaseAuth, flutter_test
+  */
+  ```
+- **Coverage Reporting:**
+  Run all tests with coverage:
+
+  ```bash
+  flutter test --coverage
+  ```
+
+---
+
+## 🧰 Test Environment Setup
+
+```bash
+# Install dependencies
+flutter pub get
+
+# Navigate to root
+cd d:\netscope
+
+# Run all tests with coverage report
+flutter test --coverage
+
+# Run a specific test file
+flutter test test/unit/auth_provider_test.dart
+```
+
+---
+
+---
+
+---
+
+> **Note:** Maintain consistent coding style, add detailed comments, and avoid skipping error edge cases. Every test must assert meaningful outcomes.
+
+---
