@@ -1,52 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:netscope/screens/home/favorites_page.dart';
+import 'package:netscope/providers/auth_provider.dart' as my_auth;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mockito/mockito.dart';
 
-// Simple favorites page widget for testing
-class TestFavoritesPage extends StatelessWidget {
-  const TestFavoritesPage({super.key});
+// Fake User implementation
+class FakeUser extends Fake implements User {
+  @override
+  String get uid => 'test-uid';
+}
+
+// Mock AuthProvider with no favorites
+class MockAuthProvider extends ChangeNotifier implements my_auth.AuthProvider {
+  @override
+  User? get user => FakeUser();
 
   @override
-  Widget build(BuildContext context) {
-    // Mock favorites data
-    final favorites = ['Speed Test', 'Traceroute', 'Network Scanner'];
+  List<String> get favorites => [];
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Favorites')),
-      body: favorites.isEmpty
-          ? const Center(child: Text('No favorites yet'))
-          : ListView.builder(
-              itemCount: favorites.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.favorite),
-                    title: Text(favorites[index]),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {},
-                    ),
-                  ),
-                );
-              },
-            ),
-    );
-  }
+  @override
+  Future<void> addFavorite(String appId) async {}
+
+  @override
+  Future<void> fetchFavorites() async {}
+
+  @override
+  Future<void> refreshUser() async {}
+
+  @override
+  Future<void> removeFavorite(String appId) async {}
+
+  @override
+  Future<void> updateProfilePhoto(String photoUrl) async {}
 }
 
 void main() {
-  testWidgets('Favorites page displays correctly', (WidgetTester tester) async {
+  testWidgets('FavoritesPage renders correctly with empty favorites',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: TestFavoritesPage(),
+      ChangeNotifierProvider<my_auth.AuthProvider>(
+        create: (_) => MockAuthProvider(),
+        child: const MaterialApp(
+          home: FavoritesPage(),
+        ),
       ),
     );
 
-    // Test assertions
-    expect(find.text('Favorites'), findsOneWidget);
-    expect(find.text('Speed Test'), findsOneWidget);
-    expect(find.text('Traceroute'), findsOneWidget);
-    expect(find.text('Network Scanner'), findsOneWidget);
-    expect(find.byIcon(Icons.favorite), findsAtLeast(1));
-    expect(find.byIcon(Icons.delete), findsAtLeast(1));
+    await tester.pumpAndSettle();
+
+    // There should be no favorite cards
+    expect(find.byType(Card), findsNothing);
   });
 }

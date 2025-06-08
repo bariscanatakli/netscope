@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Builds the widget for testing and pumps a single frame
 Future<void> pumpTestWidget(
-  WidgetTester tester, 
-  Widget child, 
+  WidgetTester tester,
+  Widget child,
 ) async {
   await tester.pumpWidget(
     MaterialApp(

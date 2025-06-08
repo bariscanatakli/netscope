@@ -33,7 +33,8 @@ Future<void> setupFirebaseForTesting() async {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // Setup mock MethodChannel responses
-  const MethodChannel channel = MethodChannel('plugins.flutter.io/firebase_core');
+  const MethodChannel channel =
+      MethodChannel('plugins.flutter.io/firebase_core');
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
     channel,

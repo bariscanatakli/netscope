@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 class MockUser extends Mock implements User {
   @override
   String get uid => 'test-user-id';
-  
+
   @override
   String? get email => 'test@example.com';
-  
+
   @override
   String? get displayName => 'Test User';
 }
@@ -18,10 +18,10 @@ class MockUser extends Mock implements User {
 // Mock Auth interface for testing
 class MockAuth extends Mock implements FirebaseAuth {
   final MockUser _currentUser = MockUser();
-  
+
   @override
   User? get currentUser => _currentUser;
-  
+
   @override
   Future<UserCredential> signInWithEmailAndPassword({
     required String email,
@@ -29,7 +29,7 @@ class MockAuth extends Mock implements FirebaseAuth {
   }) async {
     return MockUserCredential() as UserCredential;
   }
-  
+
   @override
   Future<void> signOut() async {}
 }
@@ -43,7 +43,8 @@ class MockFirestore extends Mock implements FirebaseFirestore {
 }
 
 // Mock Collection Reference
-class MockCollectionReference extends Mock implements CollectionReference<Map<String, dynamic>> {
+class MockCollectionReference extends Mock
+    implements CollectionReference<Map<String, dynamic>> {
   @override
   DocumentReference<Map<String, dynamic>> doc([String? path]) {
     return MockDocumentReference();
@@ -51,27 +52,30 @@ class MockCollectionReference extends Mock implements CollectionReference<Map<St
 }
 
 // Mock Document Reference
-class MockDocumentReference extends Mock implements DocumentReference<Map<String, dynamic>> {
+class MockDocumentReference extends Mock
+    implements DocumentReference<Map<String, dynamic>> {
   @override
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {}
-  
+
   @override
-  Future<DocumentSnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> get(
+      [GetOptions? options]) async {
     return MockDocumentSnapshot();
   }
 }
 
 // Mock Document Snapshot
-class MockDocumentSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {
+class MockDocumentSnapshot extends Mock
+    implements DocumentSnapshot<Map<String, dynamic>> {
   @override
   bool get exists => true;
-  
+
   @override
   Map<String, dynamic>? data() => {
-    'username': 'testuser',
-    'email': 'test@example.com',
-    'favorites': ['speedtest', 'traceroute'],
-  };
+        'username': 'testuser',
+        'email': 'test@example.com',
+        'favorites': ['speedtest', 'traceroute'],
+      };
 }
 
 // Mock User Credential
@@ -84,7 +88,7 @@ class MockUserCredential extends Mock implements UserCredential {
 void exampleTest() {
   final mockAuth = MockAuth();
   final mockFirestore = MockFirestore();
-  
+
   // Then inject these mocks into your widget or provider
   // For example:
   // await tester.pumpWidget(

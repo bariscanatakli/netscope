@@ -14,9 +14,10 @@ Future<void> setupFirebaseMocks() async {
 
   // Set up mocked MethodChannel responses
   const channel = MethodChannel('plugins.flutter.io/firebase_core');
-  
+
   // Override default MethodChannel handling
-  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
     channel,
     (MethodCall methodCall) async {
       switch (methodCall.method) {
