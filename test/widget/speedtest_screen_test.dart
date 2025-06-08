@@ -1,85 +1,199 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+import 'package:netscope/models/speedtest_models.dart';
 import 'package:netscope/screens/apps/speedtest/speedtest_screen.dart';
+import 'package:netscope/screens/apps/speedtest/services/speedtest_service.dart';
+
+// Generate mock class for ImprovedSpeedTest only
+@GenerateMocks([ImprovedSpeedTest])
+import 'speedtest_screen_test.mocks.dart';
 
 void main() {
-  testWidgets('Speedtest screen basic widget test (no Firebase)',
+  late MockImprovedSpeedTest mockSpeedTest;
+
+  setUp(() {
+    mockSpeedTest = MockImprovedSpeedTest();
+  });
+
+  testWidgets('SpeedTest Screen renders correctly',
       (WidgetTester tester) async {
-    // Skip this test as it requires Firebase
-    // In a real implementation, you would mock Firebase
-    // This is just a template showing what should be tested
-
-    // The test will still run but won't do any actual assertions
-    expect(true, true);
-
-    /* COMMENTED OUT: Full test implementation would be:
-    
-    // Build our app and trigger a frame
     await tester.pumpWidget(
-      const MaterialApp(
-        home: SpeedTestScreen(),
+      MaterialApp(
+        home: SpeedTestScreen(speedTest: mockSpeedTest),
       ),
     );
 
-    // Verify the basic UI elements are present
+    // Only verify essential elements to avoid overflow issues
     expect(find.text('Speed Test'), findsOneWidget);
-    
-    // Before test starts, "Start Test" button should be visible
+    expect(find.byType(SpeedTestScreen), findsOneWidget);
+  });
+
+  testWidgets('SpeedTest Screen shows initial state',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeedTestScreen(speedTest: mockSpeedTest),
+      ),
+    );
+
+    // Verify the basic elements
     expect(find.text('Start Test'), findsOneWidget);
-    
-    // After test button pressed, would verify:
-    // - Progress indicators appear
-    // - Status text updates
-    // - Results display
-    // - "View Results" button appears
-    */
+    expect(find.text('View Results'), findsOneWidget);
   });
 
-  test('Speed Test functionality explanation', () {
-    // This is a placeholder test that explains what should be tested
-    // in a real implementation with proper Firebase mocking
+  testWidgets('SpeedTest Screen starts test when button is pressed',
+      (WidgetTester tester) async {
+    // Create a completer to control the async flow
+    final completer = Completer<SpeedTestResult>();
 
-    /* The SpeedTest functionality should test:
-     * 1. Starting a speed test measures download and upload speeds
-     * 2. Progress updates correctly during the test
-     * 3. Results are displayed after test completion
-     * 4. Results are saved to Firestore for logged-in users
-     * 5. Error handling works as expected
-     */
+    // Set up the mock to capture the callback and pause execution
+    Function? progressCallback;
+    when(mockSpeedTest.runTest(any)).thenAnswer((invocation) {
+      progressCallback = invocation.positionalArguments[0];
+      return completer.future;
+    });
 
-    expect(true, true); // Always passes
+    // Build the widget
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeedTestScreen(speedTest: mockSpeedTest),
+      ),
+    );
+
+    // Find and tap the start test button
+    await tester.tap(find.text('Start Test'));
+    await tester.pump(); // Process the tap
+
+    // At this point, the state should be updated, but the UI might not reflect it yet
+    // We need to manually trigger the progress callback with the captured function
+    if (progressCallback != null) {
+      (progressCallback as Function)(TestProgress(
+        status: 'Starting test...',
+        progress: 0.1,
+        currentSpeed: 5.0,
+      ));
+    }
+
+    // Pump again to process the state change
+    await tester.pump();
+
+    // Now verify that the test has started - use findsWidgets instead of findsOneWidget
+    expect(find.text('Starting test...'), findsWidgets);
+
+    // Also verify a more specific UI change
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+    // Complete the test and process the UI
+    completer.complete(SpeedTestResult(
+      downloadSpeed: 95.5,
+      uploadSpeed: 45.2,
+      ping: 15,
+    ));
+
+    // Process all remaining frames
+    await tester.pumpAndSettle();
+
+    // Verify the mock was called
+    verify(mockSpeedTest.runTest(any)).called(1);
+
+    // Verify the result is displayed
+    expect(find.text('Download: 95.50 Mbps'), findsOneWidget);
+    expect(find.text('Upload: 45.20 Mbps'), findsOneWidget);
+    expect(find.text('Ping: 15 ms'), findsOneWidget);
   });
 
-  group('SpeedTest Screen Tests', () {
-    // Note: We're skipping widget tests that require Firebase
-    // In a real test environment, you would mock Firebase dependencies
+  testWidgets('SpeedTest Screen handles test failure',
+      (WidgetTester tester) async {
+    // Set up mock to throw an exception
+    when(mockSpeedTest.runTest(any)).thenThrow(Exception('Network error'));
 
-    test('SpeedTest functionality requirements', () {
-      // This test documents what should be tested when Firebase mocking is available
+    // Build the widget
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeedTestScreen(speedTest: mockSpeedTest),
+      ),
+    );
 
-      /* SpeedTest Screen should:
-       * 1. Display a speed gauge
-       * 2. Show a "Start Test" button when idle
-       * 3. Show progress and status during the test
-       * 4. Display results after completion: download, upload, ping
-       * 5. Offer a button to view historical results
-       */
+    // Find and tap the start test button
+    await tester.tap(find.text('Start Test'));
+    await tester.pumpAndSettle(); // Process all frames
 
-      // This always passes - just documenting requirements
-      expect(true, true);
+    // Verify error state
+    expect(find.text('Test failed'), findsWidgets);
+
+    // Verify the snackbar appears with error message
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('Error: Exception: Network error'), findsOneWidget);
+
+    // Verify we can start test again
+    expect(find.text('Start Test'), findsOneWidget);
+  });
+
+  testWidgets('SpeedTest Screen updates gauge during test',
+      (WidgetTester tester) async {
+    // Create a completer to control the async flow
+    final completer = Completer<SpeedTestResult>();
+
+    // Set up the mock to capture the callback
+    Function? progressCallback;
+    when(mockSpeedTest.runTest(any)).thenAnswer((invocation) {
+      progressCallback = invocation.positionalArguments[0];
+      return completer.future;
     });
 
-    test('SpeedTest error handling requirements', () {
-      // This test documents error handling requirements
+    // Build the widget
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeedTestScreen(speedTest: mockSpeedTest),
+      ),
+    );
 
-      /* SpeedTest error handling should:
-       * 1. Show user-friendly messages on network errors
-       * 2. Gracefully handle test interruptions
-       * 3. Allow retrying after failure
-       */
+    // Tap the start test button
+    await tester.tap(find.text('Start Test'));
+    await tester.pump();
 
-      // This always passes - just documenting requirements
-      expect(true, true);
-    });
+    // Send multiple progress updates
+    if (progressCallback != null) {
+      // Initial progress
+      (progressCallback as Function)(TestProgress(
+        status: 'Measuring latency...',
+        progress: 0.1,
+        currentSpeed: 5.0,
+      ));
+      await tester.pump();
+      expect(find.text('Measuring latency...'), findsWidgets);
+      expect(find.text('5.00 Mbps'), findsOneWidget);
+
+      // Mid-test progress
+      (progressCallback as Function)(TestProgress(
+        status: 'Testing download...',
+        progress: 0.5,
+        currentSpeed: 45.2,
+      ));
+      await tester.pump();
+      expect(find.text('Testing download...'), findsWidgets);
+      expect(find.text('45.20 Mbps'), findsOneWidget);
+    }
+
+    // Complete the test
+    completer.complete(SpeedTestResult(
+      downloadSpeed: 95.5,
+      uploadSpeed: 45.2,
+      ping: 15,
+    ));
+
+    // Wait for all animations to complete
+    await tester.pumpAndSettle();
+
+    // Verify final results instead of looking for "Test completed" text
+    expect(find.text('Download: 95.50 Mbps'), findsOneWidget);
+    expect(find.text('Upload: 45.20 Mbps'), findsOneWidget);
+    expect(find.text('Ping: 15 ms'), findsOneWidget);
+    // The Start Test button should be visible again
+    expect(find.text('Start Test'), findsOneWidget);
   });
 }

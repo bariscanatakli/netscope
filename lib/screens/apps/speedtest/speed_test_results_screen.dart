@@ -4,11 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class SpeedTestResultsScreen extends StatelessWidget {
-  const SpeedTestResultsScreen({Key? key}) : super(key: key);
+  final FirebaseAuth? auth;
+  final FirebaseFirestore? firestore;
+
+  const SpeedTestResultsScreen({
+    Key? key,
+    this.auth,
+    this.firestore,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final _auth = auth ?? FirebaseAuth.instance;
+    final _firestore = firestore ?? FirebaseFirestore.instance;
+    final user = _auth.currentUser;
 
     if (user == null) {
       return Scaffold(
@@ -20,7 +29,7 @@ class SpeedTestResultsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Speed Test Results')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
+        stream: _firestore
             .collection('speed_tests')
             .doc(user.uid)
             .collection('results')

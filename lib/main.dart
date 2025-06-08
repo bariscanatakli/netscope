@@ -3,14 +3,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/root_screen.dart';
-import 'theme/app_theme.dart';
 import 'theme/theme_notifier.dart';
 import 'providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'widgets/auth_state_wrapper.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
-import 'screens/home/root_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

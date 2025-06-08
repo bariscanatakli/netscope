@@ -6,14 +6,16 @@ import 'services/speedtest_service.dart';
 import 'speed_test_results_screen.dart';
 
 class SpeedTestScreen extends StatefulWidget {
-  const SpeedTestScreen({Key? key}) : super(key: key);
+  final ImprovedSpeedTest? speedTest; // Make this parameter optional
+
+  const SpeedTestScreen({Key? key, this.speedTest}) : super(key: key);
 
   @override
   State<SpeedTestScreen> createState() => _SpeedTestScreenState();
 }
 
 class _SpeedTestScreenState extends State<SpeedTestScreen> {
-  final _speedTest = ImprovedSpeedTest();
+  late final ImprovedSpeedTest _speedTest;
   bool _isTesting = false;
   String _status = '';
   double _progress = 0;
@@ -21,6 +23,13 @@ class _SpeedTestScreenState extends State<SpeedTestScreen> {
   double _downloadSpeed = 0;
   double _uploadSpeed = 0;
   int _ping = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _speedTest = widget.speedTest ??
+        ImprovedSpeedTest(); // Use injected service or create new one
+  }
 
   Future<void> _startTest() async {
     setState(() {
@@ -81,84 +90,87 @@ class _SpeedTestScreenState extends State<SpeedTestScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Speed Test')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SfRadialGauge(
-                axes: <RadialAxis>[
-                  RadialAxis(
-                    minimum: 0,
-                    maximum: 100,
-                    ranges: <GaugeRange>[
-                      GaugeRange(
-                        startValue: 0,
-                        endValue: _currentSpeed,
-                        color: Colors.green,
-                      ),
-                    ],
-                    pointers: <GaugePointer>[
-                      NeedlePointer(value: _currentSpeed),
-                    ],
-                    annotations: <GaugeAnnotation>[
-                      GaugeAnnotation(
-                        widget: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${_currentSpeed.toStringAsFixed(2)} Mbps',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(_status),
-                          ],
+      // Wrap with SingleChildScrollView to fix overflow
+      body: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SfRadialGauge(
+                  axes: <RadialAxis>[
+                    RadialAxis(
+                      minimum: 0,
+                      maximum: 100,
+                      ranges: <GaugeRange>[
+                        GaugeRange(
+                          startValue: 0,
+                          endValue: _currentSpeed,
+                          color: Colors.green,
                         ),
-                        angle: 90,
-                        positionFactor: 0.5,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text('Ping: $_ping ms'),
-              Text('Download: ${_downloadSpeed.toStringAsFixed(2)} Mbps'),
-              Text('Upload: ${_uploadSpeed.toStringAsFixed(2)} Mbps'),
-              const SizedBox(height: 20),
-              if (_isTesting)
-                Column(
-                  children: [
-                    LinearProgressIndicator(value: _progress),
-                    const SizedBox(height: 10),
-                    Text(_status),
-                  ],
-                )
-              else
-                Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: _startTest,
-                      child: const Text('Start Test'),
-                    ),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const SpeedTestResultsScreen()),
-                        );
-                      },
-                      child: const Text('View Results'),
+                      ],
+                      pointers: <GaugePointer>[
+                        NeedlePointer(value: _currentSpeed),
+                      ],
+                      annotations: <GaugeAnnotation>[
+                        GaugeAnnotation(
+                          widget: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${_currentSpeed.toStringAsFixed(2)} Mbps',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(_status),
+                            ],
+                          ),
+                          angle: 90,
+                          positionFactor: 0.5,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-            ],
+                const SizedBox(height: 20),
+                Text('Ping: $_ping ms'),
+                Text('Download: ${_downloadSpeed.toStringAsFixed(2)} Mbps'),
+                Text('Upload: ${_uploadSpeed.toStringAsFixed(2)} Mbps'),
+                const SizedBox(height: 20),
+                if (_isTesting)
+                  Column(
+                    children: [
+                      LinearProgressIndicator(value: _progress),
+                      const SizedBox(height: 10),
+                      Text(_status),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _startTest,
+                        child: const Text('Start Test'),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const SpeedTestResultsScreen()),
+                          );
+                        },
+                        child: const Text('View Results'),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
         ),
       ),
