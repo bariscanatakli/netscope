@@ -11,40 +11,200 @@ if ($null -eq $lcovContent -or $lcovContent -eq '') {
 
 Write-Host "Coverage data found. Generating report..."
 
-# Define modules and targets
-$modules = @{
+# Define all required test files from the TEST_CHECKLIST
+$requiredFiles = @{
     "Authentication & User Management" = @{
         "assignee" = "Mustafa Morsy";
         "target" = 90;
-        "patterns" = @("auth_", "login", "user", "profile", "account", "password", "auth/", "auth", "auth_service", "auth_provider");
-        "files" = @{};
+        "files" = @(
+            "lib/main.dart",
+            "lib/screens/auth/login_screen.dart",
+            "lib/screens/auth/signup_screen.dart",
+            "lib/screens/auth/forgot_password_screen.dart",
+            "lib/providers/auth_provider.dart",
+            "lib/screens/auth/auth_state_wrapper.dart",
+            "lib/services/auth_service.dart"
+        );
+        "patterns" = @(
+            "lib/main.dart",
+            "lib/screens/auth/",
+            "lib/providers/auth_provider.dart",
+            "lib/services/auth_service.dart"
+        );
+        "result_files" = @{};
         "lines" = 0;
         "covered" = 0;
     };
     "Speed Test & Results" = @{
         "assignee" = "Baris Can Atakli";
         "target" = 95;
-        "patterns" = @("speed", "test", "result", "speedtest", "speed_test");
-        "files" = @{};
+        "files" = @(
+            "lib/screens/apps/speedtest/speedtest_screen.dart",
+            "lib/screens/apps/speedtest/speed_test_results_screen.dart",
+            "lib/screens/apps/speedtest/services/speedtest_service.dart",
+            "lib/models/speedtest_models.dart"
+        );
+        "patterns" = @(
+            "lib/screens/apps/speedtest/",
+            "lib/models/speedtest_models.dart"
+        );
+        "result_files" = @{};
         "lines" = 0;
         "covered" = 0;
     };
     "Traceroute & Map Features" = @{
         "assignee" = "Bayram Gurbuz";
         "target" = 85;
-        "patterns" = @("map", "route", "trace", "location", "geo", "traceroute");
-        "files" = @{};
+        "files" = @(
+            "lib/screens/apps/traceroute/map/map_screen.dart",
+            "lib/screens/apps/traceroute/map/map_tab.dart",
+            "lib/screens/apps/traceroute/map/hops_tab.dart",
+            "lib/screens/apps/traceroute/map/details_tab.dart",
+            "lib/screens/apps/traceroute/map/hop_details_screen.dart",
+            "lib/screens/apps/traceroute/map/services/trace_route_service.dart",
+            "lib/models/traceroute_models.dart"
+        );
+        "patterns" = @(
+            "lib/screens/apps/traceroute/",
+            "lib/models/traceroute_"
+        );
+        "result_files" = @{};
         "lines" = 0;
         "covered" = 0;
     };
-    "Core Features & Network Scanner" = @{
+    "Core Features & UI" = @{
         "assignee" = "Alaa Hosny Saber";
         "target" = 90;
-        "patterns" = @("network", "scan", "core", "info", "services", "settings", "home");
-        "files" = @{};
+        "files" = @(
+            "lib/screens/home/home_page.dart",
+            "lib/screens/home/favorites_page.dart",
+            "lib/screens/home/profile_page.dart",
+            "lib/screens/home/root_screen.dart",
+            "lib/services/network_info_service.dart",
+            "lib/theme/theme_notifier.dart"
+        );
+        "patterns" = @(
+            "lib/screens/home/",
+            "lib/services/network_info_service.dart",
+            "lib/theme/"
+        );
+        "result_files" = @{};
         "lines" = 0;
         "covered" = 0;
     }
+}
+
+# Common files
+$commonFiles = @(
+    "test/mocks/firebase_mocks.dart"
+)
+
+# Categorize common files
+foreach ($file in $commonFiles) {
+    $requiredFiles["Authentication & User Management"]["files"] += $file
+}
+
+# Parse lcov.info
+$files = @{}
+$totalLines = 0
+$coveredLines = 0
+$currentFile = ""
+
+# Catch-all for files that don't match any module
+$uncategorized = @{
+    "files" = @{};
+    "lines" = 0;
+    "covered" = 0;
+}
+
+foreach ($line in ($lcovContent -split "`n")) {
+    if ($line.StartsWith("SF:")) {
+        $currentFile = $line.Substring(3).Replace('\', '/') # Normalize path separators to forward slashes
+    }
+    elseif ($line.StartsWith("LF:")) {
+        $fileLines = [int]$line.Substring(3)
+        $totalLines += $fileLines
+        if (-not $files.ContainsKey($currentFile)) {
+            $files[$currentFile] = @{}
+        }
+        $files[$currentFile]["lines"] = $fileLines
+        
+        # Categorize by module
+        $categorized = $false
+        foreach ($moduleName in $requiredFiles.Keys) {
+            foreach ($pattern in $requiredFiles[$moduleName]["patterns"]) {
+                if ($currentFile -match $pattern) {
+                    $requiredFiles[$moduleName]["result_files"][$currentFile] = @{}
+                    $requiredFiles[$moduleName]["result_files"][$currentFile]["lines"] = $fileLines
+                    $requiredFiles[$moduleName]["lines"] += $fileLines
+                    $categorized = $true
+                    break
+                }
+            }
+            if ($categorized) { break }
+        }
+        
+        # If not categorized, put in uncategorized
+        if (-not $categorized) {
+            $uncategorized["files"][$currentFile] = @{}
+            $uncategorized["files"][$currentFile]["lines"] = $fileLines
+            $uncategorized["lines"] += $fileLines
+        }
+    }
+    elseif ($line.StartsWith("LH:")) {
+        $fileCovered = [int]$line.Substring(3)
+        $coveredLines += $fileCovered
+        $files[$currentFile]["covered"] = $fileCovered
+        
+        # Update module coverage
+        $categorized = $false
+        foreach ($moduleName in $requiredFiles.Keys) {
+            if ($requiredFiles[$moduleName]["result_files"].ContainsKey($currentFile)) {
+                $requiredFiles[$moduleName]["result_files"][$currentFile]["covered"] = $fileCovered
+                $requiredFiles[$moduleName]["covered"] += $fileCovered
+                $categorized = $true
+                break
+            }
+        }
+        
+        # If not categorized, update uncategorized
+        if (-not $categorized) {
+            $uncategorized["files"][$currentFile]["covered"] = $fileCovered
+            $uncategorized["covered"] += $fileCovered
+        }
+    }
+}
+
+# Add all required files that weren't found in lcov.info with 0% coverage
+foreach ($moduleName in $requiredFiles.Keys) {
+    foreach ($filePath in $requiredFiles[$moduleName]["files"]) {
+        # Check if file is already in result_files
+        $fileFound = $false
+        foreach ($existingFile in $requiredFiles[$moduleName]["result_files"].Keys) {
+            if ($existingFile -eq $filePath) {
+                $fileFound = $true
+                break
+            }
+        }
+        
+        # If not found, add it with 0% coverage
+        if (-not $fileFound) {
+            # Estimate lines of code (you can adjust this default value)
+            $estimatedLines = 50
+            $requiredFiles[$moduleName]["result_files"][$filePath] = @{
+                "lines" = $estimatedLines;
+                "covered" = 0;
+            }
+            $requiredFiles[$moduleName]["lines"] += $estimatedLines
+            # Don't increase covered lines as this is 0
+        }
+    }
+}
+
+# Calculate coverage percentages
+$totalCoverage = 0
+if ($totalLines -gt 0) {
+    $totalCoverage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
 }
 
 # Create HTML report with enhanced Netscope styling
@@ -427,83 +587,6 @@ $html = @"
         </div>
 "@
 
-# Parse lcov.info
-$files = @{}
-$totalLines = 0
-$coveredLines = 0
-$currentFile = ""
-
-# Catch-all for files that don't match any module
-$uncategorized = @{
-    "files" = @{};
-    "lines" = 0;
-    "covered" = 0;
-}
-
-foreach ($line in ($lcovContent -split "`n")) {
-    if ($line.StartsWith("SF:")) {
-        $currentFile = $line.Substring(3)
-    }
-    elseif ($line.StartsWith("LF:")) {
-        $fileLines = [int]$line.Substring(3)
-        $totalLines += $fileLines
-        if (-not $files.ContainsKey($currentFile)) {
-            $files[$currentFile] = @{}
-        }
-        $files[$currentFile]["lines"] = $fileLines
-        
-        # Categorize by module
-        $categorized = $false
-        foreach ($moduleName in $modules.Keys) {
-            foreach ($pattern in $modules[$moduleName]["patterns"]) {
-                if ($currentFile -match $pattern) {
-                    $modules[$moduleName]["files"][$currentFile] = @{}
-                    $modules[$moduleName]["files"][$currentFile]["lines"] = $fileLines
-                    $modules[$moduleName]["lines"] += $fileLines
-                    $categorized = $true
-                    break
-                }
-            }
-            if ($categorized) { break }
-        }
-        
-        # If not categorized, put in uncategorized
-        if (-not $categorized) {
-            $uncategorized["files"][$currentFile] = @{}
-            $uncategorized["files"][$currentFile]["lines"] = $fileLines
-            $uncategorized["lines"] += $fileLines
-        }
-    }
-    elseif ($line.StartsWith("LH:")) {
-        $fileCovered = [int]$line.Substring(3)
-        $coveredLines += $fileCovered
-        $files[$currentFile]["covered"] = $fileCovered
-        
-        # Update module coverage
-        $categorized = $false
-        foreach ($moduleName in $modules.Keys) {
-            if ($modules[$moduleName]["files"].ContainsKey($currentFile)) {
-                $modules[$moduleName]["files"][$currentFile]["covered"] = $fileCovered
-                $modules[$moduleName]["covered"] += $fileCovered
-                $categorized = $true
-                break
-            }
-        }
-        
-        # If not categorized, update uncategorized
-        if (-not $categorized) {
-            $uncategorized["files"][$currentFile]["covered"] = $fileCovered
-            $uncategorized["covered"] += $fileCovered
-        }
-    }
-}
-
-# Calculate coverage percentages
-$totalCoverage = 0
-if ($totalLines -gt 0) {
-    $totalCoverage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
-}
-
 # Add summary with gauge chart
 $html += @"
         <div class="summary-box">
@@ -538,17 +621,17 @@ $html += @"
 "@
 
 # Add module cards
-foreach ($moduleName in $modules.Keys) {
-    $moduleLines = $modules[$moduleName]["lines"]
-    $moduleCovered = $modules[$moduleName]["covered"]
+foreach ($moduleName in $requiredFiles.Keys) {
+    $moduleLines = $requiredFiles[$moduleName]["lines"]
+    $moduleCovered = $requiredFiles[$moduleName]["covered"]
     $modulePercentage = 0
     if ($moduleLines -gt 0) {
         $modulePercentage = [math]::Round(($moduleCovered / $moduleLines) * 100, 2)
     }
-    $targetPercentage = $modules[$moduleName]["target"]
-    $assignee = $modules[$moduleName]["assignee"]
+    $targetPercentage = $requiredFiles[$moduleName]["target"]
+    $assignee = $requiredFiles[$moduleName]["assignee"]
     
-    # Fixed: Create initials without Join-String
+    # Create initials
     $nameParts = $assignee -split ' '
     $assigneeInitials = ""
     foreach ($part in $nameParts) {
@@ -615,10 +698,10 @@ $html += @"
 "@
 
 # Add detailed modules sections
-foreach ($moduleName in $modules.Keys) {
-    if ($modules[$moduleName]["files"].Count -gt 0) {
-        $moduleLines = $modules[$moduleName]["lines"]
-        $moduleCovered = $modules[$moduleName]["covered"]
+foreach ($moduleName in $requiredFiles.Keys) {
+    if ($requiredFiles[$moduleName]["result_files"].Count -gt 0) {
+        $moduleLines = $requiredFiles[$moduleName]["lines"]
+        $moduleCovered = $requiredFiles[$moduleName]["covered"]
         $modulePercentage = 0
         if ($moduleLines -gt 0) {
             $modulePercentage = [math]::Round(($moduleCovered / $moduleLines) * 100, 2)
@@ -626,7 +709,7 @@ foreach ($moduleName in $modules.Keys) {
         
         $html += @"
         <div class="section">
-            <div class="section-title">$moduleName <span class="assignee-tag" style="background-color: var(--secondary); color: white;">$($modules[$moduleName]["assignee"])</span></div>
+            <div class="section-title">$moduleName <span class="assignee-tag" style="background-color: var(--secondary); color: white;">$($requiredFiles[$moduleName]["assignee"])</span></div>
             <table class="module-table">
                 <tr>
                     <th>File</th>
@@ -636,7 +719,7 @@ foreach ($moduleName in $modules.Keys) {
 "@
         
         # Sort files by coverage (lowest first)
-        $sortedFiles = $modules[$moduleName]["files"].GetEnumerator() | 
+        $sortedFiles = $requiredFiles[$moduleName]["result_files"].GetEnumerator() | 
             Sort-Object { 
                 if ($_.Value.lines -gt 0) {
                     [math]::Round(($_.Value.covered / $_.Value.lines) * 100, 2)

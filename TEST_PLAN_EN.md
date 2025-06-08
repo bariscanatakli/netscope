@@ -13,9 +13,7 @@ NetScope Test Plan – Enhanced Team Assignment
 | **Authentication & User Management** | Mustafa Morsy       | 90%                |
 | **Speed Test & Results**             | Barış Can Ataklı | 95%                |
 | **Traceroute & Map Features**        | Bayram Gürbüz     | 85%                |
-| **Core Features & Network Scanner**  | Alaa Hosny Saber    | 90%                |
-
-    
+| **Core Features & UI**               | Alaa Hosny Saber    | 90%                |
 
 ---
 
@@ -30,6 +28,7 @@ NetScope Test Plan – Enhanced Team Assignment
 - `forgot_password_screen.dart`
 - `auth_provider.dart`
 - `auth_state_wrapper.dart`
+- `main.dart`
 
 **Critical Test Scenarios:**
 
@@ -54,7 +53,7 @@ NetScope Test Plan – Enhanced Team Assignment
 - `speedtest_screen.dart`
 - `speed_test_results_screen.dart`
 - `speedtest_service.dart`
-- `lib/screens/apps/pingtest/` (all files)
+- `network_info_service.dart`
 
 **Critical Test Scenarios:**
 
@@ -98,7 +97,7 @@ NetScope Test Plan – Enhanced Team Assignment
 
 ---
 
-### 🧩 Alaa Hosny Saber – *Core Features & Network Scanner*
+### 🧩 Alaa Hosny Saber – *Core Features & UI*
 
 **Target Files:**
 
@@ -106,8 +105,6 @@ NetScope Test Plan – Enhanced Team Assignment
 - `favorites_page.dart`
 - `profile_page.dart`
 - `root_screen.dart`
-- `network_info_service.dart`
-- `lib/screens/apps/networkscanner/` (all files)
 
 **Critical Test Scenarios:**
 
@@ -115,12 +112,10 @@ NetScope Test Plan – Enhanced Team Assignment
 - ✅ Light/Dark mode switching
 - ✅ Persistent favorites management
 - ✅ Display & update of user profile info
-- ✅ Accurate network device scanning
 - ✅ Cross-platform UI and behavior consistency
 
 **Mock Strategy:**
 
-- Create `MockNetworkScanner` for expected results
 - Use `MockSharedPreferences` for theme & favorites persistence
 
 ---
