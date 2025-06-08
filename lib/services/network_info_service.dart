@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 
 class NetworkInfoService {
+  final http.Client client;
+
+  NetworkInfoService({http.Client? client}) : client = client ?? http.Client();
+
   Future<Map<String, dynamic>> getNetworkInfo() async {
     try {
       // Try multiple IP API services
@@ -13,9 +17,11 @@ class NetworkInfoService {
         'https://ipapi.co/json/'
       ];
 
+      bool apiAttemptFailed = false;
+
       for (final api in apis) {
         try {
-          final response = await http.get(Uri.parse(api));
+          final response = await client.get(Uri.parse(api));
           if (response.statusCode == 200) {
             final ipData = json.decode(response.body);
             final ip = ipData['ip'] ?? 'Not available';
@@ -25,9 +31,16 @@ class NetworkInfoService {
               'isConnected': true,
             };
           }
-        } catch (_) {
+        } catch (e) {
+          apiAttemptFailed = true;
           continue;
         }
+      }
+
+      // If we're here because of HTTP exceptions (not just 404s),
+      // we should return the error instead of trying local interfaces
+      if (apiAttemptFailed) {
+        throw Exception('All API attempts failed');
       }
 
       // Fallback to local network interfaces
