@@ -75,10 +75,19 @@ class TracerouteResult {
   }
 
   factory TracerouteResult.fromMap(Map<String, dynamic> map) {
+    DateTime ts;
+    final t = map['timestamp'];
+    if (t is DateTime) {
+      ts = t;
+    } else if (t != null && t.toString().contains('Timestamp')) {
+      ts = t.toDate();
+    } else {
+      ts = DateTime.now();
+    }
     return TracerouteResult(
       hops: List<TracerouteHop>.from(
           (map['hops'] ?? []).map((x) => TracerouteHop.fromMap(x))),
-      timestamp: map['timestamp']?.toDate() ?? DateTime.now(),
+      timestamp: ts,
       destination: map['destination'] ?? '',
       sourceIp: map['sourceIp'] ?? '',
     );
