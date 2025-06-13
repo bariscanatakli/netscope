@@ -20,12 +20,14 @@ class TracerouteOptions {
 
 class TraceRouteService {
   final Logger _logger = Logger('TraceRouteService');
+  final http.Client httpClient;
 
-  Future<String> _getDeviceIpAddress() async {
+  TraceRouteService({http.Client? httpClient}) : httpClient = httpClient ?? http.Client();
+
+  Future<String> getDeviceIpAddress() async {
     try {
       _logger.info('Getting device IP address...');
-      final response =
-          await http.get(Uri.parse('https://api.ipify.org?format=json'));
+      final response = await httpClient.get(Uri.parse('https://api.ipify.org?format=json'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         _logger.info('Device IP address: ${data['ip']}');
@@ -39,24 +41,21 @@ class TraceRouteService {
     }
   }
 
-  Future<Map<String, dynamic>> _getGeolocation(String ipAddress) async {
+  Future<Map<String, dynamic>> getGeolocation(String ipAddress) async {
     const int maxRetries = 3;
     int retryCount = 0;
 
     while (retryCount < maxRetries) {
       try {
         _logger.info('Getting geolocation for IP address: $ipAddress');
-        final response = await http.get(
-            Uri.parse('http://ip-api.com/json/$ipAddress')); // Use ip-api.com
-
+        final response = await httpClient.get(Uri.parse('http://ip-api.com/json/$ipAddress'));
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           _logger.info('Geolocation data: $data');
           if (data['status'] == 'success') {
             return data;
           } else {
-            throw Exception(
-                'Failed to get geolocation data: ${data['message']}');
+            throw Exception('Failed to get geolocation data: ${data['message']}');
           }
         } else {
           throw Exception('Failed to get geolocation data');
@@ -68,59 +67,53 @@ class TraceRouteService {
           return {
             'city': 'Unknown',
             'country': 'Unknown',
-          }; // Return default values on error
+          };
         }
       }
     }
-
     return {
       'city': 'Unknown',
       'country': 'Unknown',
-    }; // Return default values on error
+    };
   }
 
-  Future<int> _pingIpAddress(String ipAddress) async {
+  Future<int> pingIpAddress(String ipAddress) async {
     final ping = Ping(ipAddress, count: 4);
     final pingData = await ping.stream.toList();
     final pingTimes = pingData
         .where((event) => event.response != null)
         .map((event) => event.response!.time?.inMilliseconds ?? -1)
         .toList();
-
     if (pingTimes.isNotEmpty) {
       final averagePing = pingTimes.reduce((a, b) => a + b) ~/ pingTimes.length;
       _logger.info('Ping to $ipAddress: $averagePing ms');
       return averagePing;
     } else {
       _logger.warning('Failed to ping $ipAddress');
-      return -1; // Indicate failure to ping
+      return -1;
     }
   }
 
   Future<List<TracerouteResult>> trace() async {
     List<TracerouteResult> results = [];
-    final ipAddress = await _getDeviceIpAddress();
-
+    final ipAddress = await getDeviceIpAddress();
     try {
       _logger.info('Starting traceroute for IP address: $ipAddress');
-      final response = await http.post(
+      final response = await httpClient.post(
         Uri.parse('https://api.siterelic.com/mtr'),
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key':
-              '09ceeb18-b9c4-47b9-9cdb-df86f3664c4f', // Replace 'YOUR-API-KEY' with your actual API key
+          'x-api-key': '09ceeb18-b9c4-47b9-9cdb-df86f3664c4f',
         },
         body: json.encode({'url': ipAddress}),
       );
-
       if (response.statusCode == 200) {
-        // Parse the JSON response
         final data = json.decode(response.body);
         _logger.info('Traceroute API response: $data');
         for (var hop in data['data']) {
-          final ip = _extractIpAddress(hop['host']);
-          final geolocation = await _getGeolocation(ip);
-          final pingTime = await _pingIpAddress(ip);
+          final ip = extractIpAddress(hop['host']);
+          final geolocation = await getGeolocation(ip);
+          final pingTime = await pingIpAddress(ip);
           final responseTime = (hop['avg'] as num?)?.toDouble() ?? -1.0;
           results.add(TracerouteResult(
             hopNumber: hop['hop'],
@@ -138,11 +131,10 @@ class TraceRouteService {
       _logger.severe('Error executing traceroute: $e');
       throw Exception('Error executing traceroute: $e');
     }
-
     return results;
   }
 
-  String _extractIpAddress(String? host) {
+  String extractIpAddress(String? host) {
     if (host == null) return '*';
     final match = RegExp(r'\((.*?)\)').firstMatch(host);
     return match != null ? match.group(1)! : host;

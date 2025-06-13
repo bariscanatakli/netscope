@@ -1,83 +1,105 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:http/http.dart' as http;
 import 'package:netscope/screens/apps/traceroute/map/services/trace_route_service.dart';
-import 'dart:async';
 
-class MockTraceRouteService extends TraceRouteService {
-  bool shouldThrow = false;
-  @override
-  Future<String> _getDeviceIpAddress() async => '1.1.1.1';
-
-  @override
-  Future<Map<String, dynamic>> _getGeolocation(String ipAddress) async {
-    if (shouldThrow) throw Exception('fail');
-    return {
-      'city': 'TestCity',
-      'country': 'TestCountry',
-    };
-  }
-
-  @override
-  Future<int> _pingIpAddress(String ipAddress) async => 42;
-
-  @override
-  Future<List<TracerouteResult>> trace() async {
-    return [
-      TracerouteResult(
-        hopNumber: 1,
-        address: '1.1.1.1',
-        responseTime: 42.0,
-        isSuccess: true,
-        geolocation: {'city': 'TestCity', 'country': 'TestCountry'},
-        pingTime: 42,
-      ),
-      TracerouteResult(
-        hopNumber: 2,
-        address: '2.2.2.2',
-        responseTime: 55.0,
-        isSuccess: true,
-        geolocation: {'city': 'TestCity2', 'country': 'TestCountry2'},
-        pingTime: 55,
-      ),
-    ];
-  }
-}
+class MockClient extends Mock implements http.Client {}
 
 void main() {
-  group('TraceRoute Service Tests', () {
-    final service = MockTraceRouteService();
+  late TraceRouteService traceRouteService;
+  late MockClient mockClient;
 
-    test('Traceroute returns static hops', () async {
-      final results = await service.trace();
-      expect(results.length, 2);
-      expect(results[0].address, '1.1.1.1');
-      expect(results[1].geolocation['city'], 'TestCity2');
+  setUp(() {
+    mockClient = MockClient();
+    traceRouteService = TraceRouteService(httpClient: mockClient);
+  });
+
+  group('TraceRouteService', () {
+    test('getDeviceIpAddress returns IP address on success', () async {
+      when(mockClient.get(Uri.parse('https://api.ipify.org?format=json')))
+          .thenAnswer((_) async => http.Response('{"ip": "192.168.1.1"}', 200));
+
+      final ip = await traceRouteService.getDeviceIpAddress();
+      expect(ip, '192.168.1.1');
     });
 
-    test('Geolocation returns mock data', () async {
-      final geo = await service._getGeolocation('8.8.8.8');
-      expect(geo['city'], 'TestCity');
-      expect(geo['country'], 'TestCountry');
+    test('getDeviceIpAddress throws exception on error', () async {
+      when(mockClient.get(Uri.parse('https://api.ipify.org?format=json')))
+          .thenAnswer((_) async => http.Response('Error', 500));
+
+      expect(() => traceRouteService.getDeviceIpAddress(), throwsException);
     });
 
-    test('Ping returns mock value', () async {
-      final ping = await service._pingIpAddress('8.8.8.8');
-      expect(ping, 42);
+    test('getGeolocation returns location data on success', () async {
+      when(mockClient.get(Uri.parse('http://ip-api.com/json/192.168.1.1')))
+          .thenAnswer((_) async => http.Response(
+              '{"city": "Test City", "country": "Test Country", "lat": 41.0, "lon": 29.0}',
+              200));
+
+      final location = await traceRouteService.getGeolocation('192.168.1.1');
+      expect(location['city'], 'Test City');
+      expect(location['country'], 'Test Country');
+      expect(location['lat'], 41.0);
+      expect(location['lon'], 29.0);
     });
 
-    test('Device IP returns mock value', () async {
-      final ip = await service._getDeviceIpAddress();
-      expect(ip, '1.1.1.1');
+    test('getGeolocation returns unknown location on error', () async {
+      when(mockClient.get(Uri.parse('http://ip-api.com/json/192.168.1.1')))
+          .thenAnswer((_) async => http.Response('Error', 500));
+
+      final location = await traceRouteService.getGeolocation('192.168.1.1');
+      expect(location['city'], 'Unknown');
+      expect(location['country'], 'Unknown');
     });
 
-    test('Handles error in geolocation gracefully', () async {
-      final brokenService = MockTraceRouteService();
-      brokenService.shouldThrow = true;
-      try {
-        await brokenService._getGeolocation('fail');
-        fail('Should throw');
-      } catch (e) {
-        expect(e, isA<Exception>());
-      }
+    test('pingIpAddress returns response time on success', () async {
+      when(mockClient.get(Uri.parse('http://192.168.1.1')))
+          .thenAnswer((_) async => http.Response('', 200));
+
+      final responseTime = await traceRouteService.pingIpAddress('192.168.1.1');
+      expect(responseTime, isA<int>());
+    });
+
+    test('pingIpAddress returns -1 on error', () async {
+      when(mockClient.get(Uri.parse('http://192.168.1.1')))
+          .thenAnswer((_) async => http.Response('Error', 500));
+
+      final responseTime = await traceRouteService.pingIpAddress('192.168.1.1');
+      expect(responseTime, -1);
+    });
+
+    test('trace returns list of traceroute results', () async {
+      when(mockClient.get(Uri.parse('http://localhost:3000/trace')))
+          .thenAnswer((_) async => http.Response(
+              jsonEncode([
+                {
+                  'hopNumber': 1,
+                  'address': '192.168.1.1',
+                  'responseTime': 10.0,
+                  'isSuccess': true,
+                }
+              ]),
+              200));
+
+      final results = await traceRouteService.trace();
+      expect(results, isNotEmpty);
+      expect(results[0].hopNumber, 1);
+      expect(results[0].address, '192.168.1.1');
+    });
+
+    test('trace throws exception on API error', () async {
+      when(mockClient.get(Uri.parse('http://localhost:3000/trace')))
+          .thenAnswer((_) async => http.Response('Error', 500));
+
+      expect(() => traceRouteService.trace(), throwsException);
+    });
+
+    test('extractIpAddress extracts IP from various formats', () {
+      expect(traceRouteService.extractIpAddress('192.168.1.1'), '192.168.1.1');
+      expect(traceRouteService.extractIpAddress('Reply from 192.168.1.1: bytes=32 time=10ms TTL=64'),
+          '192.168.1.1');
+      expect(traceRouteService.extractIpAddress('Request timed out.'), '');
     });
   });
-}
+} 
