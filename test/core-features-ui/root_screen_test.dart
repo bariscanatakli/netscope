@@ -14,33 +14,32 @@ import 'package:netscope/theme/theme_notifier.dart';
 class MockAuthProvider extends Fake
     with ChangeNotifier
     implements app_auth.AuthProvider {
-  
   @override
   User? get user => null; // No user logged in for tests
-  
+
   @override
   List<String> get favorites => [];
-  
+
   @override
   Future<void> fetchFavorites() async {
     // Mock implementation - do nothing
   }
-  
+
   @override
   Future<void> addFavorite(String appId) async {
     // Mock implementation - do nothing
   }
-  
+
   @override
   Future<void> removeFavorite(String appId) async {
     // Mock implementation - do nothing
   }
-  
+
   @override
   Future<void> refreshUser() async {
     // Mock implementation - do nothing
   }
-  
+
   @override
   Future<void> updateProfilePhoto(String photoUrl) async {
     // Mock implementation - do nothing
@@ -50,7 +49,7 @@ class MockAuthProvider extends Fake
 // Simple mock login screen that doesn't use Firebase
 class MockLoginScreen extends StatelessWidget {
   const MockLoginScreen({Key? key}) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
@@ -68,22 +67,22 @@ class TestNavigatorObserver extends NavigatorObserver {
   List<Route<dynamic>> removedRoutes = [];
   List<Route<dynamic>> replacedRoutes = [];
   List<Route<dynamic>> replacementRoutes = [];
-  
+
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     pushedRoutes.add(route);
   }
-  
+
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     poppedRoutes.add(route);
   }
-  
+
   @override
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     removedRoutes.add(route);
   }
-  
+
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     if (newRoute != null) replacementRoutes.add(newRoute);
@@ -108,15 +107,17 @@ void main() {
   Widget wrapWithProviders({Widget? child}) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<app_auth.AuthProvider>.value(value: mockAuthProvider),
+        ChangeNotifierProvider<app_auth.AuthProvider>.value(
+            value: mockAuthProvider),
         ChangeNotifierProvider<ThemeNotifier>.value(value: themeNotifier),
       ],
       child: MaterialApp(
         navigatorObservers: [navigatorObserver],
-        home: child ?? RootScreen(
-          // Always provide the mock login screen builder for testing
-          loginScreenBuilder: (context) => const MockLoginScreen(),
-        ),
+        home: child ??
+            RootScreen(
+              // Always provide the mock login screen builder for testing
+              loginScreenBuilder: (context) => const MockLoginScreen(),
+            ),
       ),
     );
   }
@@ -136,7 +137,8 @@ void main() {
       expect(find.byType(FavoritesPage), findsNothing);
     });
 
-    testWidgets('navigates to FavoritesPage when the heart icon is tapped', (tester) async {
+    testWidgets('navigates to FavoritesPage when the heart icon is tapped',
+        (tester) async {
       await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
@@ -149,26 +151,29 @@ void main() {
       expect(find.byType(HomePage), findsNothing);
     });
 
-    testWidgets('BottomNavigationBar is configured as expected', (tester) async {
+    testWidgets('BottomNavigationBar is configured as expected',
+        (tester) async {
       await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
-      final navBar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+      final navBar =
+          tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
       expect(navBar.type, BottomNavigationBarType.fixed);
       expect(navBar.items.length, 3);
-      
+
       // Check the icons are correct
       expect(navBar.items[0].icon, isA<Icon>());
       expect(navBar.items[1].icon, isA<Icon>());
       expect(navBar.items[2].icon, isA<Icon>());
-      
+
       // Check the labels are correct
       expect(navBar.items[0].label, 'Homepage');
       expect(navBar.items[1].label, 'Favorites');
       expect(navBar.items[2].label, 'Profile');
     });
 
-    testWidgets('can navigate back to HomePage from FavoritesPage', (tester) async {
+    testWidgets('can navigate back to HomePage from FavoritesPage',
+        (tester) async {
       await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
@@ -184,19 +189,21 @@ void main() {
       expect(find.byType(FavoritesPage), findsNothing);
     });
 
-    testWidgets('app bar contains correct title and action buttons', (tester) async {
+    testWidgets('app bar contains correct title and action buttons',
+        (tester) async {
       await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       // Check app bar title
       expect(find.text('NetScope'), findsOneWidget);
-      
+
       // Check action buttons exist
       expect(find.byIcon(Icons.logout), findsOneWidget);
       expect(find.byIcon(Icons.brightness_6), findsOneWidget);
     });
 
-    testWidgets('navigates to ProfilePage when the person icon is tapped', (tester) async {
+    testWidgets('navigates to ProfilePage when the person icon is tapped',
+        (tester) async {
       // Replace the ProfilePage with a mock widget for testing
       await tester.pumpWidget(
         wrapWithProviders(
@@ -235,13 +242,14 @@ void main() {
       expect(themeNotifier.currentTheme, isNot(initialThemeMode));
     });
 
-    testWidgets('logout button triggers navigation and shows mock login screen', (tester) async {
+    testWidgets('logout button triggers navigation and shows mock login screen',
+        (tester) async {
       await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       // Tap the logout button
       await tester.tap(find.byIcon(Icons.logout));
-      
+
       // Wait for animations
       await tester.pumpAndSettle();
 
