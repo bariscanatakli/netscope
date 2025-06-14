@@ -262,9 +262,13 @@ class _ProfilePageState extends State<ProfilePage>
     final TextEditingController confirmPasswordController =
         TextEditingController();
 
+    // Capture the provider and page context here
+    final app_auth.AuthProvider authProviderInstance = Provider.of<app_auth.AuthProvider>(context, listen: false);
+    final BuildContext pageScaffoldContext = context; // Context from ProfilePage state
+
     return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
+      context: pageScaffoldContext, // Use the captured page context for showing the dialog
+      builder: (BuildContext dialogContext) { // This is the context for the dialog route
         return AlertDialog(
           title: const Text('Change Password'),
           content: SingleChildScrollView(
@@ -304,23 +308,23 @@ class _ProfilePageState extends State<ProfilePage>
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop(); // Use dialogContext to pop itself
               },
             ),
             ElevatedButton(
               child: const Text('Change'),
               onPressed: () async {
-                final provider =
-                    Provider.of<app_auth.AuthProvider>(context, listen: false);
-                final user = provider.user;
+                // Use the captured authProviderInstance
+                final user = authProviderInstance.user;
                 if (user == null) {
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                   return;
                 }
 
                 if (newPasswordController.text !=
                     confirmPasswordController.text) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  // Use pageScaffoldContext for ScaffoldMessenger
+                  ScaffoldMessenger.of(pageScaffoldContext).showSnackBar(
                     const SnackBar(
                       content: Text('New passwords do not match'),
                       backgroundColor: Colors.red,
@@ -340,15 +344,17 @@ class _ProfilePageState extends State<ProfilePage>
                   // Update password
                   await user.updatePassword(newPasswordController.text);
 
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  Navigator.of(dialogContext).pop();
+                  // Use pageScaffoldContext for ScaffoldMessenger
+                  ScaffoldMessenger.of(pageScaffoldContext).showSnackBar(
                     const SnackBar(
                       content: Text('Password updated successfully'),
                       backgroundColor: Colors.green,
                     ),
                   );
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  // Use pageScaffoldContext for ScaffoldMessenger
+                  ScaffoldMessenger.of(pageScaffoldContext).showSnackBar(
                     SnackBar(
                       content: Text('Error updating password: $e'),
                       backgroundColor: Colors.red,
