@@ -12,7 +12,16 @@ import '../../services/storage_service.dart';
 import 'package:logging/logging.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final NetworkInfoService? networkInfoService;
+  final StorageService? storageService;
+  final ImagePicker? imagePicker;
+
+  const ProfilePage({
+    super.key,
+    this.networkInfoService,
+    this.storageService,
+    this.imagePicker,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -20,9 +29,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
-  final NetworkInfoService _networkService = NetworkInfoService();
-  final StorageService _storageService = StorageService();
-  final ImagePicker _picker = ImagePicker();
+  late NetworkInfoService _networkService;
+  late StorageService _storageService;
+  late ImagePicker _picker;
   final _logger = Logger('ProfilePage');
 
   Map<String, dynamic>? _networkInfo;
@@ -38,6 +47,12 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void initState() {
     super.initState();
+
+    // Use injected services or create new ones
+    _networkService = widget.networkInfoService ?? NetworkInfoService();
+    _storageService = widget.storageService ?? StorageService();
+    _picker = widget.imagePicker ?? ImagePicker();
+
     _initialLoad();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 500),
@@ -75,11 +90,19 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _loadNetworkInfo() async {
     if (!mounted) return;
-    final info = await _networkService.getNetworkInfo();
-    if (!mounted) return;
-    setState(() {
-      _networkInfo = info;
-    });
+    try {
+      final info = await _networkService.getNetworkInfo();
+      if (!mounted) return;
+      setState(() {
+        _networkInfo = info;
+      });
+    } catch (e) {
+      _logger.warning('Error loading network info: $e');
+      if (!mounted) return;
+      setState(() {
+        _networkInfo = {'ip': 'Unknown', 'connectionType': 'Unknown'};
+      });
+    }
   }
 
   Future<void> _loadProfileImage() async {
@@ -114,11 +137,22 @@ class _ProfilePageState extends State<ProfilePage>
         final username = userDoc.data()?['username'] as String?;
         if (!mounted) return;
         setState(() {
-          _usernameController.text = username ?? '';
+          _usernameController.text = username ?? user.displayName ?? '';
+        });
+      } else {
+        // If document doesn't exist, use display name
+        if (!mounted) return;
+        setState(() {
+          _usernameController.text = user.displayName ?? '';
         });
       }
     } catch (e) {
       _logger.warning('Error loading username: $e');
+      // Fallback to display name
+      if (!mounted) return;
+      setState(() {
+        _usernameController.text = user.displayName ?? '';
+      });
     }
   }
 
@@ -160,6 +194,7 @@ class _ProfilePageState extends State<ProfilePage>
         _profileImageUrl = photoUrl;
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile photo updated successfully'),
@@ -204,6 +239,7 @@ class _ProfilePageState extends State<ProfilePage>
         'username': _usernameController.text.trim(),
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Username updated successfully')),
       );
@@ -212,6 +248,7 @@ class _ProfilePageState extends State<ProfilePage>
         _isEditingUsername = false;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating username: $e')),
       );
@@ -277,12 +314,7 @@ class _ProfilePageState extends State<ProfilePage>
                     Provider.of<app_auth.AuthProvider>(context, listen: false);
                 final user = provider.user;
                 if (user == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please sign in to change your password'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  Navigator.of(context).pop();
                   return;
                 }
 
@@ -298,27 +330,17 @@ class _ProfilePageState extends State<ProfilePage>
                 }
 
                 try {
-                  if (user.providerData[0].providerId == 'google.com') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('Cannot change password for Google sign-in'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    Navigator.of(context).pop();
-                    return;
-                  }
-
-                  // For email-password users
+                  // Re-authenticate user
                   final credential = EmailAuthProvider.credential(
                     email: user.email!,
                     password: currentPasswordController.text,
                   );
                   await user.reauthenticateWithCredential(credential);
-                  await user.updatePassword(newPasswordController.text);
-                  Navigator.of(context).pop();
 
+                  // Update password
+                  await user.updatePassword(newPasswordController.text);
+
+                  Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Password updated successfully'),
@@ -328,7 +350,7 @@ class _ProfilePageState extends State<ProfilePage>
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error changing password: $e'),
+                      content: Text('Error updating password: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -353,12 +375,16 @@ class _ProfilePageState extends State<ProfilePage>
               ? const Icon(Icons.person, size: 50)
               : null,
         ),
+        if (_isUploading)
+          const Positioned.fill(
+            child: CircularProgressIndicator(),
+          ),
         Positioned(
           bottom: 0,
           right: 0,
           child: IconButton(
             icon: const Icon(Icons.camera_alt),
-            onPressed: _updateProfilePhoto,
+            onPressed: _isUploading ? null : _updateProfilePhoto,
           ),
         ),
       ],
@@ -404,6 +430,7 @@ class _ProfilePageState extends State<ProfilePage>
           controller: controller,
           decoration: InputDecoration(
             labelText: title,
+            border: InputBorder.none,
           ),
         ),
         trailing: IconButton(
@@ -414,14 +441,26 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  bool _canChangePassword(User? user) {
+    if (user == null) return false;
+    return user.providerData.any((info) => info.providerId == 'password');
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<app_auth.AuthProvider>(context);
     final user = provider.user;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDarkMode ? Colors.black : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black;
-    final buttonColor = isDarkMode ? Colors.grey[800] : Colors.blue;
+
+    if (_isInitialLoading) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -433,50 +472,48 @@ class _ProfilePageState extends State<ProfilePage>
               opacity: _fadeAnimation,
               child: SingleChildScrollView(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 32),
                     _buildProfileImage(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     _buildSectionTitle(context, 'Account Information'),
                     _buildProfileCard(
                       icon: Icons.email,
                       title: 'Email',
-                      subtitle: user?.email ?? 'Not set',
+                      subtitle: user?.email ?? 'No email',
                     ),
-                    if (_isEditingUsername)
-                      _buildEditableProfileCard(
-                        icon: Icons.person,
-                        title: 'Username',
-                        controller: _usernameController,
-                        onSave: _updateUsername,
-                      )
-                    else
-                      _buildProfileCard(
-                        icon: Icons.person,
-                        title: 'Username',
-                        subtitle: _usernameController.text,
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            setState(() {
-                              _isEditingUsername = true;
-                            });
-                          },
+                    _isEditingUsername
+                        ? _buildEditableProfileCard(
+                            icon: Icons.person,
+                            title: 'Username',
+                            controller: _usernameController,
+                            onSave: _updateUsername,
+                          )
+                        : _buildProfileCard(
+                            icon: Icons.person,
+                            title: 'Username',
+                            subtitle: _usernameController.text.isEmpty
+                                ? 'No username set'
+                                : _usernameController.text,
+                            trailing: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                setState(() {
+                                  _isEditingUsername = true;
+                                });
+                              },
+                            ),
+                          ),
+                    if (_canChangePassword(user))
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.lock),
+                          title: const Text('Change Password'),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: _changePassword,
                         ),
                       ),
-                    const SizedBox(height: 16),
-                    if (user?.providerData[0].providerId != 'google.com')
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.lock),
-                        label: const Text('Change Password'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: buttonColor,
-                          foregroundColor: textColor,
-                        ),
-                        onPressed: _changePassword,
-                      ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     _buildSectionTitle(context, 'Network Information'),
                     _buildProfileCard(
                       icon: Icons.wifi,
@@ -488,6 +525,7 @@ class _ProfilePageState extends State<ProfilePage>
                       title: 'Connection Type',
                       subtitle: _networkInfo?['connectionType'] ?? 'Loading...',
                     ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
