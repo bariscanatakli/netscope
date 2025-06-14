@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:netscope/screens/home/root_screen.dart';
 import 'package:netscope/screens/home/home_page.dart';
 import 'package:netscope/screens/home/favorites_page.dart';
-import 'package:netscope/screens/auth/login_screen.dart';
 import 'package:netscope/providers/auth_provider.dart' as app_auth;
 import 'package:netscope/theme/theme_notifier.dart';
 
@@ -47,6 +46,50 @@ class MockAuthProvider extends Fake
     // Mock implementation - do nothing
   }
 }
+
+// Simple mock login screen that doesn't use Firebase
+class MockLoginScreen extends StatelessWidget {
+  const MockLoginScreen({Key? key}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text("Mock Login Screen"),
+      ),
+    );
+  }
+}
+
+// NavigatorObserver to track navigation events
+class TestNavigatorObserver extends NavigatorObserver {
+  List<Route<dynamic>> pushedRoutes = [];
+  List<Route<dynamic>> poppedRoutes = [];
+  List<Route<dynamic>> removedRoutes = [];
+  List<Route<dynamic>> replacedRoutes = [];
+  List<Route<dynamic>> replacementRoutes = [];
+  
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushedRoutes.add(route);
+  }
+  
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    poppedRoutes.add(route);
+  }
+  
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    removedRoutes.add(route);
+  }
+  
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    if (newRoute != null) replacementRoutes.add(newRoute);
+    if (oldRoute != null) replacedRoutes.add(oldRoute);
+  }
+}
 // ================================
 
 void main() {
@@ -54,30 +97,33 @@ void main() {
 
   late ThemeNotifier themeNotifier;
   late app_auth.AuthProvider mockAuthProvider;
+  late TestNavigatorObserver navigatorObserver;
 
   setUp(() {
     themeNotifier = ThemeNotifier();
     mockAuthProvider = MockAuthProvider();
+    navigatorObserver = TestNavigatorObserver();
   });
 
-  Widget _wrapWithProviders({Widget? child}) {
+  Widget wrapWithProviders({Widget? child}) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<app_auth.AuthProvider>.value(value: mockAuthProvider),
         ChangeNotifierProvider<ThemeNotifier>.value(value: themeNotifier),
       ],
       child: MaterialApp(
-        home: child ?? const RootScreen(),
-        routes: {
-          '/login': (_) => const LoginScreen(),
-        },
+        navigatorObservers: [navigatorObserver],
+        home: child ?? RootScreen(
+          // Always provide the mock login screen builder for testing
+          loginScreenBuilder: (context) => const MockLoginScreen(),
+        ),
       ),
     );
   }
 
   group('RootScreen widget tests', () {
     testWidgets('starts on HomePage with correct nav labels', (tester) async {
-      await tester.pumpWidget(_wrapWithProviders());
+      await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       // Check navigation labels are present
@@ -91,7 +137,7 @@ void main() {
     });
 
     testWidgets('navigates to FavoritesPage when the heart icon is tapped', (tester) async {
-      await tester.pumpWidget(_wrapWithProviders());
+      await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       // Tap the favorites icon
@@ -104,7 +150,7 @@ void main() {
     });
 
     testWidgets('BottomNavigationBar is configured as expected', (tester) async {
-      await tester.pumpWidget(_wrapWithProviders());
+      await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       final navBar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
@@ -123,7 +169,7 @@ void main() {
     });
 
     testWidgets('can navigate back to HomePage from FavoritesPage', (tester) async {
-      await tester.pumpWidget(_wrapWithProviders());
+      await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       // Navigate to favorites
@@ -139,7 +185,7 @@ void main() {
     });
 
     testWidgets('app bar contains correct title and action buttons', (tester) async {
-      await tester.pumpWidget(_wrapWithProviders());
+      await tester.pumpWidget(wrapWithProviders());
       await tester.pumpAndSettle();
 
       // Check app bar title
@@ -150,8 +196,58 @@ void main() {
       expect(find.byIcon(Icons.brightness_6), findsOneWidget);
     });
 
-    // NOTE: ProfilePage navigation test removed because ProfilePage uses Firebase services
-    // that can't be easily mocked in tests. This test would require additional setup
-    // to mock StorageService and other Firebase dependencies.
+    testWidgets('navigates to ProfilePage when the person icon is tapped', (tester) async {
+      // Replace the ProfilePage with a mock widget for testing
+      await tester.pumpWidget(
+        wrapWithProviders(
+          child: RootScreen(
+            profilePageOverride: Container(
+              key: const Key('mock_profile_page'),
+              child: const Text('Mock Profile Page'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap the profile icon
+      await tester.tap(find.byIcon(Icons.person));
+      await tester.pumpAndSettle();
+
+      // Verify we navigated to the profile page
+      expect(find.byKey(const Key('mock_profile_page')), findsOneWidget);
+      expect(find.byType(HomePage), findsNothing);
+      expect(find.byType(FavoritesPage), findsNothing);
+    });
+
+    testWidgets('theme toggle button changes theme', (tester) async {
+      await tester.pumpWidget(wrapWithProviders());
+      await tester.pumpAndSettle();
+
+      // Get initial theme mode
+      final initialThemeMode = themeNotifier.currentTheme;
+
+      // Tap the theme toggle button
+      await tester.tap(find.byIcon(Icons.brightness_6));
+      await tester.pumpAndSettle();
+
+      // Verify theme mode changed
+      expect(themeNotifier.currentTheme, isNot(initialThemeMode));
+    });
+
+    testWidgets('logout button triggers navigation and shows mock login screen', (tester) async {
+      await tester.pumpWidget(wrapWithProviders());
+      await tester.pumpAndSettle();
+
+      // Tap the logout button
+      await tester.tap(find.byIcon(Icons.logout));
+      
+      // Wait for animations
+      await tester.pumpAndSettle();
+
+      // Verify that our mock login screen is now visible
+      expect(find.text("Mock Login Screen"), findsOneWidget);
+      expect(find.byType(RootScreen), findsNothing);
+    });
   });
 }

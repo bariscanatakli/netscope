@@ -10,7 +10,15 @@ import 'home_page.dart';
 import '../../theme/theme_notifier.dart';
 
 class RootScreen extends StatefulWidget {
-  const RootScreen({super.key});
+  // Add optional parameters for testing
+  final Widget? profilePageOverride;
+  final WidgetBuilder? loginScreenBuilder;
+
+  const RootScreen({
+    super.key,
+    this.profilePageOverride,
+    this.loginScreenBuilder,
+  });
 
   @override
   State<RootScreen> createState() => _RootScreenState();
@@ -19,11 +27,18 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    FavoritesPage(),
-    ProfilePage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pages = [
+      const HomePage(),
+      const FavoritesPage(),
+      widget.profilePageOverride ?? const ProfilePage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -41,12 +56,21 @@ class _RootScreenState extends State<RootScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
-                ),
-              );
+              if (widget.loginScreenBuilder != null) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: widget.loginScreenBuilder!,
+                  ),
+                );
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginScreen(),
+                  ),
+                );
+              }
             },
           ),
           IconButton(

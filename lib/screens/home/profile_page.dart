@@ -263,12 +263,16 @@ class _ProfilePageState extends State<ProfilePage>
         TextEditingController();
 
     // Capture the provider and page context here
-    final app_auth.AuthProvider authProviderInstance = Provider.of<app_auth.AuthProvider>(context, listen: false);
-    final BuildContext pageScaffoldContext = context; // Context from ProfilePage state
+    final app_auth.AuthProvider authProviderInstance =
+        Provider.of<app_auth.AuthProvider>(context, listen: false);
+    final BuildContext pageScaffoldContext =
+        context; // Context from ProfilePage state
 
     return showDialog<void>(
-      context: pageScaffoldContext, // Use the captured page context for showing the dialog
-      builder: (BuildContext dialogContext) { // This is the context for the dialog route
+      context:
+          pageScaffoldContext, // Use the captured page context for showing the dialog
+      builder: (BuildContext dialogContext) {
+        // This is the context for the dialog route
         return AlertDialog(
           title: const Text('Change Password'),
           content: SingleChildScrollView(
@@ -308,7 +312,8 @@ class _ProfilePageState extends State<ProfilePage>
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // Use dialogContext to pop itself
+                Navigator.of(dialogContext)
+                    .pop(); // Use dialogContext to pop itself
               },
             ),
             ElevatedButton(

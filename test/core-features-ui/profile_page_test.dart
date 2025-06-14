@@ -504,7 +504,8 @@ void main() {
 
     testWidgets('Failed username update', (WidgetTester tester) async {
       // Mock failed username update
-      when(mockUser.updateDisplayName(any)).thenThrow(Exception('Update failed'));
+      when(mockUser.updateDisplayName(any))
+          .thenThrow(Exception('Update failed'));
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
