@@ -1,6 +1,18 @@
 # First run tests with coverage
 flutter test --coverage
 
+if (Test-Path "coverage/lcov.info") {
+    Write-Host "Filtering out test files from lcov.info..."
+    & lcov --remove coverage/lcov.info "*test/*" -o coverage/lcov_filtered.info
+    if (Test-Path "coverage/lcov_filtered.info") {
+        Copy-Item -Force "coverage/lcov_filtered.info" "coverage/lcov.info"
+    } else {
+        Write-Host "Warning: lcov_filtered.info not created."
+    }
+} else {
+    Write-Host "Error: coverage/lcov.info does not exist. Skipping filter step."
+}
+
 # Read lcov.info content
 $lcovContent = Get-Content coverage/lcov.info -Raw
 

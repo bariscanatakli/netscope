@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/logo_widget.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  final AuthService? authService; // ✅ Optional override for testing
+
+  const LoginScreen({Key? key, this.authService}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -15,8 +15,15 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
+  late final AuthService _authService;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Use provided AuthService (in tests), or real one in production
+    _authService = widget.authService ?? AuthService();
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
@@ -24,14 +31,14 @@ class _LoginScreenState extends State<LoginScreen> {
       final credential = await _authService.signInWithGoogle();
       if (!mounted) return;
 
-      // After successful sign in, go to home directly
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
   }
 
   Future<void> _signInWithEmail() async {
@@ -42,13 +49,15 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
       if (!mounted) return;
+
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
   }
 
   @override
@@ -63,8 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  LogoWidget(), // Add the logo widget here
+                  LogoWidget(),
                   TextField(
+                    key: const Key('emailField'), // ✅ for tests
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'Email',
@@ -73,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextField(
+                    key: const Key('passwordField'), // ✅ for tests
                     controller: _passwordController,
                     obscureText: true,
                     decoration: const InputDecoration(
@@ -83,7 +94,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _signInWithEmail,
-                    child: const Text('Login'),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Login'),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(

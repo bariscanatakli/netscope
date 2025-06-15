@@ -3,31 +3,48 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseAuth auth;
+  final GoogleSignIn googleSignIn;
+  final FirebaseFirestore firestore;
+
+  AuthService({
+    FirebaseAuth? auth,
+    GoogleSignIn? googleSignIn,
+    FirebaseFirestore? firestore,
+  })  : auth = auth ?? FirebaseAuth.instance,
+        googleSignIn = googleSignIn ?? GoogleSignIn(),
+        firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<UserCredential> signInWithGoogle() async {
-    // Forces a new account pick prompt
-    await _googleSignIn.signOut();
-    final GoogleSignInAccount? gUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication? gAuth = await gUser?.authentication;
+    // Sign out just in case
+    await googleSignIn.signOut();
+
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      throw Exception('Google sign-in aborted');
+    }
+
+    final googleAuth = await googleUser.authentication;
 
     final credential = GoogleAuthProvider.credential(
-      accessToken: gAuth?.accessToken,
-      idToken: gAuth?.idToken,
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
     );
 
-    final userCredential = await _auth.signInWithCredential(credential);
+    final userCredential = await auth.signInWithCredential(credential);
+    final user = userCredential.user;
 
-    // Create Firestore doc with Google display name if not existing
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userCredential.user!.uid);
-    final userDoc = await docRef.get();
-    if (!userDoc.exists) {
-      await docRef.set({
-        'email': userCredential.user!.email,
-        'username': userCredential.user!.displayName ?? '',
+    if (user == null) {
+      throw Exception('Google sign-in failed');
+    }
+
+    final userDoc = firestore.collection('users').doc(user.uid);
+    final docSnapshot = await userDoc.get();
+
+    if (!docSnapshot.exists) {
+      await userDoc.set({
+        'email': user.email,
+        'username': user.displayName,
         'createdAt': Timestamp.now(),
       });
     }

@@ -3,15 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
   User? _user;
   List<String> _favorites = [];
 
   User? get user => _user;
   List<String> get favorites => _favorites;
 
-  AuthProvider() {
+  AuthProvider({
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+  })  : _auth = auth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance {
     _auth.authStateChanges().listen((User? user) {
       _user = user;
       if (user != null) {
