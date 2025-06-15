@@ -23,7 +23,7 @@ class MapTab extends StatefulWidget {
 }
 
 class _MapTabState extends State<MapTab> {
-  late GoogleMapController _mapController;
+  GoogleMapController? _mapController;
   bool _isInteracting = false;
   final TextEditingController _ipController = TextEditingController();
   final Set<Marker> _markers = {};
@@ -61,19 +61,53 @@ class _MapTabState extends State<MapTab> {
   void _setInitialPosition() {
     if (_validHops.isNotEmpty) {
       final firstHop = _validHops.first;
-      final lat =
-          firstHop['geolocation']['lat'] ?? firstHop['coordinates']['lat'];
-      final lon =
-          firstHop['geolocation']['lon'] ?? firstHop['coordinates']['lon'];
-      setState(() {
-        _initialPosition = CameraPosition(
-          target: LatLng(lat, lon),
-          zoom: 10,
+      Map<String, dynamic>? geolocation;
+      Map<String, dynamic>? coordinates;
+
+      // Safe casting with null checks
+      try {
+        if (firstHop['geolocation'] is Map) {
+          geolocation =
+              Map<String, dynamic>.from(firstHop['geolocation'] as Map);
+        }
+        if (firstHop['coordinates'] is Map) {
+          coordinates =
+              Map<String, dynamic>.from(firstHop['coordinates'] as Map);
+        }
+      } catch (e) {
+        return; // Skip if invalid data
+      }
+
+      final latValue = geolocation?['lat'] ?? coordinates?['lat'];
+      final lonValue = geolocation?['lon'] ?? coordinates?['lon'];
+
+      // Safely parse coordinates with null checks and type validation
+      double? lat;
+      double? lon;
+
+      if (latValue is num) {
+        lat = latValue.toDouble();
+      } else if (latValue is String) {
+        lat = double.tryParse(latValue);
+      }
+
+      if (lonValue is num) {
+        lon = lonValue.toDouble();
+      } else if (lonValue is String) {
+        lon = double.tryParse(lonValue);
+      }
+
+      if (lat != null && lon != null && !lat.isNaN && !lon.isNaN) {
+        setState(() {
+          _initialPosition = CameraPosition(
+            target: LatLng(lat!, lon!),
+            zoom: 10,
+          );
+        });
+        _mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(_initialPosition!),
         );
-      });
-      _mapController.animateCamera(
-        CameraUpdate.newCameraPosition(_initialPosition!),
-      );
+      }
     }
   }
 
@@ -82,23 +116,78 @@ class _MapTabState extends State<MapTab> {
     setState(() {
       _markers.clear();
       _validHops = widget.hops.where((hop) {
-        return (hop['geolocation']['lat'] != null &&
-                hop['geolocation']['lon'] != null) ||
-            (hop['coordinates'] != null &&
-                hop['coordinates']['lat'] != null &&
-                hop['coordinates']['lon'] != null);
+        Map<String, dynamic>? geolocation;
+        Map<String, dynamic>? coordinates;
+
+        // Safe casting with null checks
+        try {
+          if (hop['geolocation'] is Map) {
+            geolocation = Map<String, dynamic>.from(hop['geolocation'] as Map);
+          }
+          if (hop['coordinates'] is Map) {
+            coordinates = Map<String, dynamic>.from(hop['coordinates'] as Map);
+          }
+        } catch (e) {
+          return false; // Skip hops with invalid data
+        }
+
+        return (geolocation != null &&
+                geolocation['lat'] != null &&
+                geolocation['lon'] != null) ||
+            (coordinates != null &&
+                coordinates['lat'] != null &&
+                coordinates['lon'] != null);
       }).toList();
       for (var hop in _validHops) {
-        final lat = hop['geolocation']['lat'] ?? hop['coordinates']['lat'];
-        final lon = hop['geolocation']['lon'] ?? hop['coordinates']['lon'];
+        Map<String, dynamic>? geolocation;
+        Map<String, dynamic>? coordinates;
+
+        // Safe casting with null checks
+        try {
+          if (hop['geolocation'] is Map) {
+            geolocation = Map<String, dynamic>.from(hop['geolocation'] as Map);
+          }
+          if (hop['coordinates'] is Map) {
+            coordinates = Map<String, dynamic>.from(hop['coordinates'] as Map);
+          }
+        } catch (e) {
+          continue; // Skip hops with invalid data
+        }
+
+        final latValue = geolocation?['lat'] ?? coordinates?['lat'];
+        final lonValue = geolocation?['lon'] ?? coordinates?['lon'];
+        final city = geolocation?['city'] ?? coordinates?['city'] ?? 'Unknown';
+        final country =
+            geolocation?['country'] ?? coordinates?['country'] ?? 'Unknown';
+
+        // Safely parse coordinates with null checks and type validation
+        double? lat;
+        double? lon;
+
+        if (latValue is num) {
+          lat = latValue.toDouble();
+        } else if (latValue is String) {
+          lat = double.tryParse(latValue);
+        }
+
+        if (lonValue is num) {
+          lon = lonValue.toDouble();
+        } else if (lonValue is String) {
+          lon = double.tryParse(lonValue);
+        }
+
+        // Skip markers with invalid coordinates
+        if (lat == null || lon == null || lat.isNaN || lon.isNaN) {
+          continue;
+        }
+
         _markers.add(
           Marker(
             markerId: MarkerId(hop['address']),
             position: LatLng(lat, lon),
             infoWindow: InfoWindow(
               title: 'Hop ${hop['hopNumber']}',
-              snippet:
-                  '${hop['geolocation']['city'] ?? hop['coordinates']['city']}, ${hop['geolocation']['country'] ?? hop['coordinates']['country']}',
+              snippet: '$city, $country',
               onTap: () {
                 _showHopDetails(hop);
               },
@@ -125,20 +214,24 @@ class _MapTabState extends State<MapTab> {
     }
 
     final hop = _validHops[index];
-    final lat = hop['geolocation']['lat'] ?? hop['coordinates']['lat'];
-    final lon = hop['geolocation']['lon'] ?? hop['coordinates']['lon'];
-    print('Navigating to hop: $index, ${hop['address']}');
-    _mapController.animateCamera(
-      CameraUpdate.newLatLng(
-        LatLng(lat, lon),
-      ),
-    );
-    setState(() {
-      _currentHopIndex = index;
-      _visitedMarkers.add(Marker(markerId: MarkerId(hop['address'])));
-      _updateMarkers();
-    });
-    _mapController.showMarkerInfoWindow(MarkerId(hop['address']));
+    final geolocation = hop['geolocation'] as Map<String, dynamic>?;
+    final coordinates = hop['coordinates'] as Map<String, dynamic>?;
+    final lat = geolocation?['lat'] ?? coordinates?['lat'];
+    final lon = geolocation?['lon'] ?? coordinates?['lon'];
+    if (lat != null && lon != null) {
+      print('Navigating to hop: $index, ${hop['address']}');
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLng(
+          LatLng(lat, lon),
+        ),
+      );
+      setState(() {
+        _currentHopIndex = index;
+        _visitedMarkers.add(Marker(markerId: MarkerId(hop['address'])));
+        _updateMarkers();
+      });
+      _mapController?.showMarkerInfoWindow(MarkerId(hop['address']));
+    }
   }
 
   void _showHopDetails(Map<String, dynamic> hop) {
@@ -166,7 +259,7 @@ class _MapTabState extends State<MapTab> {
             onMapCreated: (GoogleMapController controller) {
               _mapController = controller;
               if (_initialPosition != null) {
-                _mapController.animateCamera(
+                _mapController?.animateCamera(
                   CameraUpdate.newCameraPosition(_initialPosition!),
                 );
               }

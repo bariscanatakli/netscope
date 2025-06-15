@@ -3,8 +3,14 @@ import 'dart:io';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final DefaultCacheManager _cacheManager = DefaultCacheManager();
+  final FirebaseStorage _storage;
+  final CacheManager _cacheManager;
+
+  StorageService({
+    FirebaseStorage? storage,
+    CacheManager? cacheManager,
+  })  : _storage = storage ?? FirebaseStorage.instance,
+        _cacheManager = cacheManager ?? DefaultCacheManager();
 
   Future<String?> getProfileImage(String userId) async {
     try {
